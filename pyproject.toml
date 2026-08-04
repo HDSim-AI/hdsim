@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hdsim"
+version = "0.1.0.dev0"
+description = "Household decision simulation through multi-agent negotiation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = ["multi-agent", "simulation", "household", "travel-demand", "llm-agents"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Core stays small on purpose. One HTTP client reaches every provider that speaks the OpenAI
+# chat API, and the offline demo needs nothing at all. Model weights and training frameworks are
+# extras, so installing hdsim never pulls a multi-gigabyte stack you did not ask for.
+dependencies = [
+    "openai>=1.40",
+]
+
+[project.optional-dependencies]
+# Run models locally instead of over HTTP, for offline or cluster use.
+local = [
+    "torch>=2.1",
+    "transformers>=4.44",
+    "accelerate>=0.30",
+]
+# Metrics that need scipy.
+eval = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+]
+dev = [
+    "pytest>=7.4",
+    "ruff>=0.5",
+]
+
+[project.scripts]
+hdsim = "hdsim.core.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/HDSim-AI"
+Source = "https://github.com/HDSim-AI/hdsim"
+Paper = "https://arxiv.org/abs/2604.10475"
+
+[tool.setuptools.packages.find]
+# hdsim is a namespace: this distribution owns hdsim.core, domain packages own
+# hdsim.travel and hdsim.mobility. No hdsim/__init__.py anywhere, by design.
+include = ["hdsim.core*"]
+
+[tool.setuptools.package-data]
+"hdsim.core.fixtures" = ["*.json"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

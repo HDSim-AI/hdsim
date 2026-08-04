@@ -1,0 +1,198 @@
+[
+  {
+    "household_id": "23001767",
+    "unit": "trips",
+    "members": [
+      {
+        "person_id": 1,
+        "role": "Husband",
+        "proposal_value": 2,
+        "capsule": ""
+      },
+      {
+        "person_id": 2,
+        "role": "Wife",
+        "proposal_value": 4,
+        "capsule": ""
+      }
+    ],
+    "transcript": [
+      {
+        "round": 1,
+        "speaker": "Husband",
+        "text": "Let me think\u2026 I know you\u2019re planning to go grocery shopping tomorrow, so that\u2019s two one-way trips. Off the top of my head, I\u2019d say we have 2 trips planned."
+      },
+      {
+        "round": 1,
+        "speaker": "Wife",
+        "text": "That sounds a little low. Don\u2019t forget you\u2019ll be driving to work in the morning and coming back in the afternoon. That\u2019s another two trips, so I think the total should actually be 4 trips."
+      },
+      {
+        "round": 2,
+        "speaker": "Husband",
+        "text": "You\u2019re right\u2014I completely forgot to count my commute. Adding my drive to work and back with your grocery trip brings us to 4 trips."
+      },
+      {
+        "round": 2,
+        "speaker": "Wife",
+        "text": "Exactly. I don\u2019t think we\u2019ve missed anything else, so 4 trips sounds right to me."
+      }
+    ],
+    "consensus_value": 4,
+    "ground_truth": null
+  },
+  {
+    "household_id": "23002205",
+    "unit": "trips",
+    "members": [
+      {
+        "person_id": 1,
+        "role": "Wife",
+        "proposal_value": 6,
+        "capsule": ""
+      },
+      {
+        "person_id": 2,
+        "role": "Husband",
+        "proposal_value": 8,
+        "capsule": ""
+      }
+    ],
+    "transcript": [
+      {
+        "round": 1,
+        "speaker": "Wife",
+        "text": "I\u2019ve been thinking about tomorrow\u2019s plans. I want to stop by the coffee shop in the morning, then head home before running a few errands like grocery shopping, picking up the dry cleaning, or dropping off a package. Based on what I have planned, I think we\u2019ll have about 6 trips tomorrow."
+      },
+      {
+        "round": 1,
+        "speaker": "Husband",
+        "text": "That sounds reasonable, but don\u2019t forget I\u2019ll be driving to work in the morning and coming back home afterward. Those are another two one-way trips, so I think the total should be closer to 8 trips."
+      },
+      {
+        "round": 2,
+        "speaker": "Wife",
+        "text": "You\u2019re right, I forgot to include your commute. Adding your drive to work and back to my coffee shop and errand trips brings the total up. I think we\u2019re looking at around 9 trips."
+      },
+      {
+        "round": 2,
+        "speaker": "Husband",
+        "text": "I agree. Since my commute is fixed and your coffee and errand trips are already accounted for, 9 trips sounds like the best estimate."
+      }
+    ],
+    "consensus_value": 9,
+    "ground_truth": null
+  },
+  {
+    "household_id": "23002020",
+    "unit": "trips",
+    "members": [
+      {
+        "person_id": 1,
+        "role": "Wife",
+        "proposal_value": 8,
+        "capsule": ""
+      },
+      {
+        "person_id": 2,
+        "role": "Husband",
+        "proposal_value": 12,
+        "capsule": ""
+      },
+      {
+        "person_id": 3,
+        "role": "Parent",
+        "proposal_value": null,
+        "capsule": ""
+      }
+    ],
+    "transcript": [
+      {
+        "round": 1,
+        "speaker": "Wife",
+        "text": "I\u2019ve been thinking about tomorrow. I\u2019ll be driving the kids to school, picking them up afterward, and taking them to an extracurricular activity later in the day. Based on what I have in mind, I was estimating around 8 trips for the household. I know you have your own plans tomorrow too, so let me know if I missed anything."
+      },
+      {
+        "round": 1,
+        "speaker": "Husband",
+        "text": "I think we may have a few more than that. Besides the school and activity trips you\u2019ve mentioned, I\u2019ll be driving to work in the morning and coming home afterward. I might also stop for groceries or run another errand if needed. With those included, I was thinking the total could be around 12 trips."
+      },
+      {
+        "round": 1,
+        "speaker": "Parent",
+        "text": "I don\u2019t have anywhere I need to go tomorrow. If I do leave the house, it\u2019ll only be because one of you is giving me a ride, so I don\u2019t think I\u2019m adding any extra trips."
+      },
+      {
+        "round": 2,
+        "speaker": "Wife",
+        "text": "I went back through everything. I think I probably overcounted a little at first. If we include my school and extracurricular driving, your commute, and remember that Dad isn\u2019t making any independent trips, 10 trips seems like a more realistic total."
+      },
+      {
+        "round": 2,
+        "speaker": "Husband",
+        "text": "That makes sense. I was including the possibility of an extra errand, but since that isn\u2019t certain yet, I\u2019m fine counting only the trips we know will happen. 10 trips sounds reasonable."
+      },
+      {
+        "round": 2,
+        "speaker": "Parent",
+        "text": "I agree. Since I\u2019ll just be riding along if needed and won\u2019t be making any trips on my own, I think 10 trips is the right number."
+      }
+    ],
+    "consensus_value": 10,
+    "ground_truth": null
+  },
+  {
+    "household_id": "23000173",
+    "unit": "trips",
+    "members": [
+      {
+        "person_id": 1,
+        "role": "Dad",
+        "proposal_value": 8,
+        "capsule": ""
+      },
+      {
+        "person_id": 2,
+        "role": "Mom",
+        "proposal_value": 8,
+        "capsule": ""
+      },
+      {
+        "person_id": 3,
+        "role": "Older Son",
+        "proposal_value": 8,
+        "capsule": ""
+      },
+      {
+        "person_id": 4,
+        "role": "Younger Son",
+        "proposal_value": 8,
+        "capsule": ""
+      }
+    ],
+    "transcript": [
+      {
+        "round": 1,
+        "speaker": "Dad",
+        "text": "Okay, let\u2019s go over tomorrow. I\u2019ll drive the boys to school in the morning and pick them up afterward, so that\u2019s four one-way trips. You also mentioned you have two trips tomorrow. That should put us at 8 trips altogether."
+      },
+      {
+        "round": 1,
+        "speaker": "Mom",
+        "text": "That sounds right. I only have those two trips planned, and you\u2019ve already counted the school drop-off and pick-up, so 8 trips makes sense."
+      },
+      {
+        "round": 1,
+        "speaker": "Older Son",
+        "text": "Yeah, I think that\u2019s everything we have planned tomorrow. 8 trips sounds right to me."
+      },
+      {
+        "round": 1,
+        "speaker": "Younger Son",
+        "text": "I can\u2019t think of anything else either. 8 trips sounds good."
+      }
+    ],
+    "consensus_value": 8,
+    "ground_truth": null
+  }
+]
