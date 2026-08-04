@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+title: "PEMAND: Persona-Enriched Multi-Agent Negotiation for Household Decision-Making"
+message: "If you use this software or method, please cite the paper below."
+type: software
+authors:
+  - family-names: Sun
+    given-names: Yuran
+  - family-names: Sameen
+    given-names: Mustafa
+  - family-names: Zhang
+    given-names: Yaotian
+  - family-names: Gu
+    given-names: Rongguan
+  - family-names: Vibhute
+    given-names: Mrunal
+  - family-names: Wu
+    given-names: Chia-yu
+  - family-names: Lei
+    given-names: Yuanyuan
+  - family-names: Zhao
+    given-names: Xilei
+preferred-citation:
+  type: article
+  title: "PEMAND: Persona-Enriched Multi-Agent Negotiation for Household Decision-Making"
+  year: 2026
+  journal: "arXiv preprint arXiv:2604.10475"
+  url: "https://arxiv.org/abs/2604.10475"
+  authors:
+    - family-names: Sun
+      given-names: Yuran
+    - family-names: Sameen
+      given-names: Mustafa
+    - family-names: Zhang
+      given-names: Yaotian
+    - family-names: Gu
+      given-names: Rongguan
+    - family-names: Vibhute
+      given-names: Mrunal
+    - family-names: Wu
+      given-names: Chia-yu
+    - family-names: Lei
+      given-names: Yuanyuan
+    - family-names: Zhao
+      given-names: Xilei
+license: MIT
+repository-code: "https://github.com/HDSim-AI/hdsim"
