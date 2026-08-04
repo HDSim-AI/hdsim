@@ -87,7 +87,11 @@ def build_capsule(member: Member, config: DomainConfig,
                   client: Client | None = None) -> Member:
     """Fill in `member.facts` and `member.capsule`."""
     client = client or get_client("persona")
-    member.facts = config.facts_for(member.record)
+    # A loader may have written richer facts already. Some surveys describe a person partly through
+    # household-level fields that only make sense once the whole household is in hand, and the
+    # loader is the only place that sees the group. Recomputing here would silently discard them.
+    if not member.facts:
+        member.facts = config.facts_for(member.record)
     if not member.facts:
         raise PersonaError(f"member {member.person_id}: no facts could be rendered from the record")
 
