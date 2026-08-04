@@ -28,7 +28,8 @@ configuration for a specific decision; the pipeline itself does not change betwe
 No API key and no data download:
 
 ```bash
-pip install hdsim
+git clone https://github.com/HDSim-AI/hdsim && cd hdsim
+pip install -e .
 hdsim demo
 ```
 
@@ -64,7 +65,7 @@ hdsim config              # check what each role will use
 ```
 
 ```python
-from hdsim.travel import NHTS, Household, build_personas, simulate   # pip install hdsim-travel
+from hdsim.travel import NHTS, Household, build_personas, simulate   # see travel-decision
 
 household = Household.from_json("household.json")
 
@@ -140,7 +141,7 @@ HDSIM_MODERATOR_MODEL=
 
 Precedence is argument, then environment variable, then `.env`, then default.
 
-To run weights locally instead: `pip install hdsim[local]`.
+To run weights locally instead: `pip install -e '.[local]'`.
 
 ## Adding a domain
 
