@@ -26,6 +26,13 @@ class DecisionTask:
     context: str                  # "tomorrow"
     target_description: str       # "the total number of one-way trips the household will make"
     unit: str                     # "trips"
+
+    # Three quantities, three labels. A member's own count, that member's view of the household
+    # total, and the agreed total are different numbers, and a discussion that cannot name them
+    # separately collapses them: asked for "one number", a model averages the members instead of
+    # summing them. Kept aligned with the negotiation implementation in the research pipeline.
+    member_label: str = "MY_VALUE"
+    total_label: str = "PREFERRED_TOTAL"
     final_label: str = "FINAL_VALUE"
     value_type: type = int
     value_range: tuple[float, float] = (0, 30)
@@ -60,6 +67,10 @@ class DomainConfig:
     # How a member is described to housemates, and how relationships are named.
     describe_member: Callable[[Any], str] | None = None
     relate_members: Callable[[Any, Any], str] | None = None
+
+    # Values the Chain-of-Planned-Behaviour user template needs, which only the domain knows:
+    # role_hint, veh_count and driver_status. Returning {} lets the defaults stand.
+    copb_fields: Callable[[dict], dict] | None = None
 
     # Escape hatch for surveys whose facts cannot be rendered one column at a time.
     # Age and sex together give "a 44-year-old man"; relationship and sex together give "the wife

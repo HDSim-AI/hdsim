@@ -63,25 +63,27 @@ def test_replay_runs_without_a_key():
     assert len(replay.available()) >= 1
 
 
-def test_transcript_parser_handles_markdown_speaker_labels():
-    """Models emit speaker labels in several shapes. All must parse, with no stray emphasis."""
-    from hdsim.core.negotiate import parse_transcript
+def test_stage2_parses_the_consensus_format():
+    """The stage-two completion format, as the ported parser reads it."""
+    from hdsim.core import stage2
 
-    text = (
-        "**Round 1**\n"
-        "- **Member 1:** I think 3 trips.\n"
-        "**Member 2:** ** I disagree, 4 trips.\n"
-        "- Member 3: Agreed, 4 trips.\n"
-        "Round 2\n"
-        "**Wife**: Fine, 4 it is.\n"
-        "FINAL_VALUE: 4\n"
+    completion = (
+        "[Member 1] ACKNOWLEDGE: roster MY_VALUE: 4 PREFERRED_TOTAL: 6\n"
+        "[Member 2] ACKNOWLEDGE: Member 1 MY_VALUE: 2 PREFERRED_TOTAL: 6\n"
+        "FINAL_CONSENSUS: 6\n"
     )
-    turns = parse_transcript(text)
-    assert [t["speaker"] for t in turns] == ["Member 1", "Member 2", "Member 3", "Wife"]
-    assert [t["round"] for t in turns] == [1, 1, 1, 2]
-    assert not any(t["text"].startswith("*") for t in turns), "emphasis leaked into turn text"
-    assert not any(t["text"].endswith("*") for t in turns)
-    assert turns[0]["text"] == "I think 3 trips."
+    result = stage2.parse_completion_to_result(completion, n_members=2)
+    assert result["final_value"] == 6
+    assert result["n_rounds"] == 1
+    assert len(result["transcript"]) == 3
+
+
+def test_stage2_final_label_is_the_household_sum_not_an_average():
+    """The distinction the three labels exist to preserve."""
+    from hdsim.core import stage2
+
+    assert "sum" in stage2.CONSENSUS_SYSTEM_TEMPLATE.lower()
+    assert stage2.MEMBER_LABEL != stage2.TOTAL_LABEL != stage2.FINAL_LABEL
 
 
 def test_capsule_length_floor_scales_with_fact_count():

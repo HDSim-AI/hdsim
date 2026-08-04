@@ -35,6 +35,7 @@ __version__ = "0.1.0.dev0"
 from .domain import DecisionTask, DomainConfig
 from .household import Household, Member, load_households
 from .negotiate import negotiate, parse_value, propose, simulate
+from . import stage1, stage2
 from .persona import build_capsule, build_personas, enrich
 
 __all__ = [
@@ -51,4 +52,6 @@ __all__ = [
     "negotiate",
     "simulate",
     "parse_value",
+    "stage1",
+    "stage2",
 ]
