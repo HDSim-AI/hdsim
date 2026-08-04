@@ -109,8 +109,15 @@ def enrich(member: Member, config: DomainConfig, client: Client | None = None) -
         raise PersonaError(f"member {member.person_id}: build_capsule must run first")
     client = client or get_client("persona")
 
+    if not config.copb_system or not config.copb_user:
+        raise PersonaError(
+            f"domain {config.name!r} has no Chain-of-Planned-Behaviour prompts. Each domain "
+            f"supplies its own: travel asks about daily trips, mobility about relocation, and "
+            f"running one domain's prompt on another is a silent wrong answer."
+        )
+
     anchor = config.anchor(member.record)
-    system = stage1.ACTOR_SYSTEM_PROMPT.replace(
+    system = config.copb_system.replace(
         "{{ANCHOR}}", str(round(anchor, 1)) if anchor is not None else "unknown")
 
     marker = {"statement": "", "implication": ""}
@@ -120,6 +127,7 @@ def enrich(member: Member, config: DomainConfig, client: Client | None = None) -
             marker = picked
 
     fields = {
+        "anchor": anchor if anchor is not None else 0.0,
         "persona": member.persona,
         "marker_statement": marker.get("statement", ""),
         "marker_implication": marker.get("implication", ""),
@@ -133,7 +141,7 @@ def enrich(member: Member, config: DomainConfig, client: Client | None = None) -
 
     text = client.chat([
         {"role": "system", "content": system},
-        {"role": "user", "content": stage1.COPB_USER_TEMPLATE.format(**fields)},
+        {"role": "user", "content": config.copb_user.format(**fields)},
     ], temperature=0.3)
 
     parsed = stage1.parse_tpb_sections(text)

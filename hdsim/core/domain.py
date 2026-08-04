@@ -68,6 +68,13 @@ class DomainConfig:
     describe_member: Callable[[Any], str] | None = None
     relate_members: Callable[[Any, Any], str] | None = None
 
+    # The Chain-of-Planned-Behaviour prompts. These are domain specific: the travel version asks a
+    # transportation psychologist about daily trips, the mobility version asks a demographic
+    # sociologist about relocation, and each carries its own empirical rules. Core supplies no
+    # default, because a domain running another domain's prompt is a silent wrong answer.
+    copb_system: str = ""
+    copb_user: str = ""
+
     # Values the Chain-of-Planned-Behaviour user template needs, which only the domain knows:
     # role_hint, veh_count and driver_status. Returning {} lets the defaults stand.
     copb_fields: Callable[[dict], dict] | None = None
