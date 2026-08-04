@@ -52,6 +52,12 @@ runs before anyone downloads anything.
 Record the model and version behind any reported result. Results produced by a language model are
 not reproducible without it, and reproducibility is the point of this project.
 
+## Questions and comments
+
+If something is unclear, or you think a design choice is wrong, or you want to talk through a use
+case before writing code, send an email to mustafasameen@ufl.edu. We would rather have the
+conversation than have you guess, and we are happy to talk through anything in the method.
+
 ## Code of conduct
 
 Be decent to each other. Research infrastructure is a long game and the community is small.
