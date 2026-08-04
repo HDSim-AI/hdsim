@@ -30,6 +30,35 @@ class PersonaError(RuntimeError):
 
 # --- capsule --------------------------------------------------------------------------------------
 
+_WORD_NUMBERS = {
+    "zero": "0", "one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6",
+    "seven": "7", "eight": "8", "nine": "9", "ten": "10", "eleven": "11", "twelve": "12",
+}
+
+
+def _numbers(text: str) -> set[str]:
+    """The numeric content of a passage, independent of how it is written.
+
+    A fact and a faithful rendering of it can spell the same number differently, and neither
+    difference means anything was dropped:
+
+        "17000"      written back as "17,000"
+        "2 vehicles" written back as "two vehicles"
+
+    Comparing raw digit runs treats both as losses. The first is worse than it looks, because a
+    naive match reads "17,000" as the two numbers 17 and 000 and then reports the original as
+    missing, which is how a correct persona gets rejected.
+    """
+    import re as _re
+
+    normalized = _re.sub(r"(?<=\d),(?=\d)", "", text.lower())
+    found = set(_re.findall(r"\d+", normalized))
+    for word, digit in _WORD_NUMBERS.items():
+        if _re.search(rf"\b{word}\b", normalized):
+            found.add(digit)
+    return {n.lstrip("0") or "0" for n in found}
+
+
 def check_capsule(text: str, facts: list[str], config: DomainConfig) -> str | None:
     """Return the reason a capsule is unusable, or None if it passes.
 
@@ -50,7 +79,7 @@ def check_capsule(text: str, facts: list[str], config: DomainConfig) -> str | No
     if words < floor:
         return f"too short ({words} words for {len(facts)} facts, expected at least {floor})"
 
-    missing = set(re.findall(r"\d+", " ".join(facts))) - set(re.findall(r"\d+", text))
+    missing = _numbers(" ".join(facts)) - _numbers(text)
     if missing:
         return f"dropped facts containing {sorted(missing)}"
 

@@ -103,3 +103,20 @@ def test_capsule_rejects_dropped_numeric_facts():
     facts = ["I am 44 years old.", "My household owns 2 vehicles."]
     dropped = "I am 44 years old and I live with my family in a house near town."
     assert "dropped facts" in (check_capsule(dropped, facts, cfg) or "")
+
+
+def test_number_check_ignores_how_a_number_is_written():
+    """A faithful rendering is not a dropped fact.
+
+    Regression: a real NHTS persona was rejected because the model wrote "17,000" and the check
+    read that as the two numbers 17 and 000, then reported the original 17000 as missing.
+    """
+    from hdsim.core.persona import check_capsule
+
+    cfg = _config()
+    facts = ["My area's density is 17000.", "My household owns 2 vehicles."]
+    assert check_capsule("My area's density is 17,000. My household owns two vehicles.",
+                         facts, cfg) is None
+    # a genuinely dropped number is still caught
+    assert "dropped facts" in (check_capsule("My area is dense and I own vehicles.",
+                                             facts, cfg) or "")
