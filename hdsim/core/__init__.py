@@ -34,23 +34,30 @@ __version__ = "0.1.0.dev0"
 
 from . import stage1, stage2
 from .domain import DecisionTask, DomainConfig
+from .evaluate import BinaryScores, Scores, is_binary, paired_bootstrap, score, score_binary
 from .household import Household, Member, load_households
 from .negotiate import negotiate, parse_value, propose, simulate
 from .persona import build_capsule, build_personas, enrich
 
 __all__ = [
+    "BinaryScores",
     "DecisionTask",
     "DomainConfig",
     "Household",
     "Member",
+    "Scores",
     "__version__",
     "build_capsule",
     "build_personas",
     "enrich",
+    "is_binary",
     "load_households",
     "negotiate",
+    "paired_bootstrap",
     "parse_value",
     "propose",
+    "score",
+    "score_binary",
     "simulate",
     "stage1",
     "stage2",

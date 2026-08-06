@@ -39,9 +39,16 @@ class Scores:
 
 
 def _pairs(households: Sequence[Household]) -> tuple[list[float], list[float]]:
+    import math
+
     predicted, actual = [], []
     for h in households:
         if h.consensus_value is None or h.ground_truth is None:
+            continue
+        # A loader that summed a blank cell yields NaN. It compares false against everything, so
+        # it survives every guard above and turns MAE into nan while `n` still counts the
+        # household. Drop it here rather than report a metric nobody can read.
+        if not (math.isfinite(float(h.consensus_value)) and math.isfinite(float(h.ground_truth))):
             continue
         predicted.append(float(h.consensus_value))
         actual.append(float(h.ground_truth))
