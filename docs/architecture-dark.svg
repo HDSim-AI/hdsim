@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 340" width="900" height="340" role="img" aria-label="hdsim is the method core; travel-decision and residential-mobility are domain packages built on it">
+<defs><style>.t{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}.m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}</style></defs>
+<rect x="150" y="24" width="600" height="92" rx="12" fill="#172a22" stroke="#5fbf95" stroke-width="1.5"/>
+<text x="172" y="60" class="m" font-size="17" font-weight="600" fill="#5fbf95">hdsim</text>
+<text x="242" y="60" class="t" font-size="15" fill="#93a49e">the method core</text>
+<text x="172" y="90" class="t" font-size="14.5" fill="#e2eae6">survey record  →  personas  →  independent proposals  →  moderated negotiation</text>
+<path d="M450.0 116 V176" stroke="#3c4d45" stroke-width="1.5" fill="none"/>
+<path d="M152.0 176 H748.0" stroke="#3c4d45" stroke-width="1.5" fill="none"/>
+<text x="462.0" y="142" class="m" font-size="12" fill="#93a49e">hdsim.core</text>
+<path d="M152.0 176 V214" stroke="#3c4d45" stroke-width="1.5" fill="none"/>
+<rect x="18" y="214" width="268" height="104" rx="11" fill="#161d22" stroke="#2b3a34" stroke-width="1.5" />
+<text x="36" y="246" class="m" font-size="14.5" font-weight="600" fill="#e2eae6">travel-decision</text>
+<text x="36" y="270" class="m" font-size="12.5" fill="#5fbf95">hdsim.travel</text>
+<text x="36" y="296" class="t" font-size="13" fill="#93a49e">How many trips tomorrow</text>
+<path d="M450.0 176 V214" stroke="#3c4d45" stroke-width="1.5" fill="none"/>
+<rect x="316" y="214" width="268" height="104" rx="11" fill="#161d22" stroke="#2b3a34" stroke-width="1.5" />
+<text x="334" y="246" class="m" font-size="14.5" font-weight="600" fill="#e2eae6">residential-mobility</text>
+<text x="334" y="270" class="m" font-size="12.5" fill="#5fbf95">hdsim.mobility</text>
+<text x="334" y="296" class="t" font-size="13" fill="#93a49e">Move or stay</text>
+<path d="M748.0 176 V214" stroke="#3c4d45" stroke-width="1.5" stroke-dasharray="4 4" fill="none"/>
+<rect x="614" y="214" width="268" height="104" rx="11" fill="#12181c" stroke="#26332d" stroke-width="1.5" stroke-dasharray="5 4" />
+<text x="632" y="246" class="m" font-size="14.5" font-weight="600" fill="#93a49e">your domain</text>
+<text x="632" y="270" class="m" font-size="12.5" fill="#93a49e">hdsim.&lt;name&gt;</text>
+<text x="632" y="296" class="t" font-size="13" fill="#93a49e">Energy, purchases, evacuation</text>
+</svg>

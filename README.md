@@ -228,10 +228,23 @@ generation, the last is the move-or-stay decision.
 
 ## Domain packages
 
-| Package | Repository | Decision |
+**This repository is the core.** It holds the method and knows nothing about any particular
+decision. A domain package adds a survey loader and one `DomainConfig`; the pipeline is unchanged.
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/architecture-dark.svg">
+  <img src="./docs/architecture-light.svg" width="100%" alt="hdsim is the method core; travel-decision and residential-mobility are domain packages built on it, and a new domain slots in alongside them">
+</picture>
+</p>
+
+| Package | Repository | Decides |
 |---|---|---|
-| `hdsim.travel` | [travel-decision](https://github.com/HDSim-AI/travel-decision) | Trips the household makes tomorrow |
-| `hdsim.mobility` | [residential-mobility](https://github.com/HDSim-AI/residential-mobility) | Whether the household relocates |
+| `hdsim.travel` | [travel-decision](https://github.com/HDSim-AI/travel-decision) | How many trips the household makes tomorrow |
+| `hdsim.mobility` | [residential-mobility](https://github.com/HDSim-AI/residential-mobility) | Whether the household moves |
+
+All three install alongside each other: `hdsim` owns `hdsim.core`, and each domain owns its own
+subpackage under the same namespace.
 
 ## Layout
 
