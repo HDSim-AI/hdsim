@@ -13,7 +13,7 @@ from hdsim.core import (
     replay,
 )
 from hdsim.core.evaluate import paired_bootstrap
-from hdsim.core.negotiate import _read_turn
+from hdsim.core.negotiate import _binary_consensus, _read_turn
 
 
 def _config():
@@ -264,3 +264,54 @@ def test_every_documented_import_resolves():
                 assert hasattr(mod, name), f"{path.name}: {module} has no {name!r}"
                 checked += 1
     assert checked, "no documented imports found to check"
+
+
+# --- a yes or no is not a sum -------------------------------------------------------------------
+
+def test_a_single_yes_does_not_move_the_household():
+    """The consensus prompt asks for a sum across members, which is right for a count and wrong
+    for a yes or no: summing then clamping into (0, 1) turned one yes into a household that moves.
+    """
+    one_yes = {1: 1, 2: 0, 3: 0, 4: 0}
+    assert _binary_consensus(3, one_yes) is False       # a summed count, not a decision
+    assert _binary_consensus(2, one_yes) is False
+    assert _binary_consensus(None, one_yes) is False
+    # a value that is already a yes or no is taken at face value
+    assert _binary_consensus(1, one_yes) is True
+    assert _binary_consensus(0, one_yes) is False
+
+
+def test_binary_falls_back_to_a_majority_of_final_positions():
+    assert _binary_consensus(None, {1: 1, 2: 1, 3: 0}) is True
+    assert _binary_consensus(None, {1: 1, 2: 0, 3: 0}) is False
+    assert _binary_consensus(None, {1: 1, 2: 0}) is None          # a tie is not a decision
+    assert _binary_consensus(None, {}) is None
+
+
+def test_a_turn_carries_the_speakers_own_position():
+    turn = _read_turn("[Member 2] ACKNOWLEDGE: I would rather stay. MY_VALUE: 0 "
+                      "PREFERRED_TOTAL: 0", {2: "Spouse"})
+    assert turn["own_value"] == 0 and turn["speaker"] == "Spouse"
+
+
+# --- metrics and records ------------------------------------------------------------------------
+
+def test_a_survey_coded_yes_or_no_is_still_recognised_as_binary():
+    """A survey codes the outcome 1/0, not True/False. Missing that put within_1 back to 1.0."""
+    hs = [Household(household_id=str(i), consensus_value=p, ground_truth=t)
+          for i, (p, t) in enumerate([(True, 1), (False, 0), (False, 1), (True, 0)])]
+    assert evaluate.is_binary(hs)
+    with pytest.raises(TypeError, match="score_binary"):
+        evaluate.score(hs)
+    assert evaluate.score_binary(hs).accuracy == 0.5
+
+
+def test_a_record_can_be_read_back():
+    h = Household(household_id="x", members=[Member(person_id=1, label="Head")],
+                  consensus_value=6, unit="trips",
+                  transcript=[{"round": 1, "speaker": "Head", "text": "Two each way."}])
+    h.members[0].proposal_value = 6
+    back = Household.from_record(h.to_record())
+    assert back.unit == "trips" and back.consensus_value == 6
+    assert back.members[0].label == "Head" and back.members[0].person_id == 1
+    assert replay.render(back.to_record()) == replay.render(h.to_record())
