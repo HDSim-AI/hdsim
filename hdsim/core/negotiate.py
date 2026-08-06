@@ -35,6 +35,9 @@ _TURN_RE = re.compile(
 )
 
 
+_OWN_VALUE_RE = re.compile(rf"{re.escape(stage2.MEMBER_LABEL)}\s*[:=]\s*(-?\d+)", re.IGNORECASE)
+
+
 def _read_turn(line: str, names: dict[int, str]) -> dict[str, Any] | None:
     """One completion line -> a transcript turn, or None if it carries no dialogue."""
     m = _TURN_RE.search(line)
@@ -46,7 +49,30 @@ def _read_turn(line: str, names: dict[int, str]) -> dict[str, Any] | None:
     if not text or re.fullmatch(r"\[?Member\s+\d+\]?", text, re.IGNORECASE):
         text = ""
     pid = int(m.group("pid"))
-    return {"person_id": pid, "speaker": names.get(pid, f"Member {pid}"), "text": text}
+    own = _OWN_VALUE_RE.search(line)
+    return {"person_id": pid, "speaker": names.get(pid, f"Member {pid}"), "text": text,
+            "own_value": int(own.group(1)) if own else None}
+
+
+def _binary_consensus(final_value: int | None, preferences: dict[int, int]) -> bool | None:
+    """The household's yes or no.
+
+    The consensus prompt asks for "the household's total ... (the sum across ALL members)", which
+    is the right instruction for a count and the wrong one for a yes or no: summing four members
+    and clamping the result into (0, 1) turns a single yes into a household that moves. So a
+    boolean domain only accepts a final value that is already 0 or 1, and otherwise falls back to
+    a majority vote over each member's last stated position, which is what the paper specifies for
+    a binary outcome. A tie is not a decision and is reported as one.
+    """
+    if final_value in (0, 1):
+        return bool(final_value)
+    if not preferences:
+        return None
+    yes = sum(1 for v in preferences.values() if v)
+    no = len(preferences) - yes
+    if yes == no:
+        return None
+    return yes > no
 
 
 def _task_dict(config: DomainConfig) -> dict[str, str]:
@@ -142,9 +168,19 @@ def negotiate(household: Household, config: DomainConfig,
     client = client or get_client("moderator")
     members = [_member_dict(m) for m in household]
 
+    # stage2's roster reads attributes back out of persona text with travel-survey regexes
+    # ("I am a licensed driver", "household owns 2 vehicles"). On any other domain every one of
+    # them misses and the roster asserts "non-worker, non-driver, age ?" as canonical fact, over
+    # personas that say otherwise. The paper describes no roster, so this is an implementation
+    # detail rather than the method, and a domain may replace it.
+    prompt = stage2.build_household_prompt(members)
+    if config.household_roster is not None:
+        prompt = prompt.replace(stage2.build_household_roster(members),
+                                config.household_roster(household), 1)
+
     text = client.chat([
         {"role": "system", "content": stage2.build_consensus_system(_task_dict(config))},
-        {"role": "user", "content": stage2.build_household_prompt(members)},
+        {"role": "user", "content": prompt},
     ], max_tokens=max_tokens)
 
     result = stage2.parse_completion_to_result(text, len(household))
@@ -153,15 +189,21 @@ def negotiate(household: Household, config: DomainConfig,
     # member per round, so a repeat means the discussion has come back around.
     names = {m.person_id: (m.label or f"Member {m.person_id}") for m in household}
     turns: list[dict[str, Any]] = []
+    preferences: dict[int, int] = {}      # each member's last stated position
     round_no, seen = 1, set()
     for line in result["transcript"]:
         turn = _read_turn(line, names)
-        if turn is None or not turn["text"]:
+        if turn is None:
             continue
-        if turn["person_id"] in seen:
+        pid, own = turn.pop("person_id"), turn.pop("own_value")
+        if own is not None:
+            preferences[pid] = own
+        if not turn["text"]:
+            continue
+        if pid in seen:
             round_no += 1
             seen = set()
-        seen.add(turn.pop("person_id"))
+        seen.add(pid)
         turns.append({"round": round_no, **turn})
 
     household.transcript = turns
@@ -169,10 +211,13 @@ def negotiate(household: Household, config: DomainConfig,
     household.unit = config.task.unit
 
     value = result["final_value"]
-    if value is not None:
+    if config.task.value_type is bool:
+        household.consensus_value = _binary_consensus(value, preferences)
+    elif value is not None:
         low, high = config.task.value_range
-        value = config.task.value_type(max(low, min(high, value)))
-    household.consensus_value = value
+        household.consensus_value = config.task.value_type(max(low, min(high, value)))
+    else:
+        household.consensus_value = None
     return household
 
 
