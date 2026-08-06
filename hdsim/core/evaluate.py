@@ -64,10 +64,19 @@ class BinaryScores:
 
 
 def is_binary(households: Sequence[Household]) -> bool:
-    """True when the decision is a yes or no rather than a count."""
+    """True when the decision is a yes or no rather than a count.
+
+    A survey codes a yes or no as 1 and 0, so a set can arrive with `True` predictions against
+    integer ground truth, or as 0/1 throughout. Testing for `bool` alone misses both, and missing
+    them is not harmless: the count metrics then report within_1 = within_2 = 1.0 on data where
+    those numbers cannot mean anything.
+    """
     values = [h.ground_truth for h in households if h.ground_truth is not None]
     values += [h.consensus_value for h in households if h.consensus_value is not None]
-    return bool(values) and all(isinstance(v, bool) for v in values)
+    if not values:
+        return False
+    return all(isinstance(v, bool) or (isinstance(v, (int, float)) and v in (0, 1))
+               for v in values)
 
 
 def score_binary(households: Sequence[Household]) -> BinaryScores:
@@ -76,7 +85,8 @@ def score_binary(households: Sequence[Household]) -> BinaryScores:
     Precision, recall and F1 all treat yes as the positive class, because the interesting error in
     a relocation study is missing a household that moves, not one that stays.
     """
-    pairs = [(h.consensus_value, h.ground_truth) for h in households
+    # bool() so a set coded 1/0 scores the same as one using True/False
+    pairs = [(bool(h.consensus_value), bool(h.ground_truth)) for h in households
              if h.consensus_value is not None and h.ground_truth is not None]
     n = len(pairs)
     if n == 0:
