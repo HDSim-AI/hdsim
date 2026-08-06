@@ -25,26 +25,26 @@
 
 ---
 
-## 🧭 What can hdsim do?
+## What hdsim does
 
-`hdsim` predicts what a household decides, from the survey records you already have. Feed it rows
-from a travel survey or a panel study and it returns a decision for each household, plus the
-conversation among the household members that produced it.
+Predicts what a household decides, from survey records you already have. You get a decision for
+each household and the conversation among its members that produced it.
 
-- predicts one household at a time, rather than an average over a segment
-- returns the transcript behind every number, so a prediction can be inspected and argued with
-- answers questions the survey never asked, on the households it already covers
-- runs offline from bundled recordings, so you can see the output before configuring anything
-- takes a new decision domain as configuration, not as a new pipeline
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/pipeline-core-dark.svg">
+  <img src="./docs/pipeline-core-light.svg" width="100%" alt="A survey record becomes personas, then independent proposals, then a moderated negotiation, then the household decision">
+</picture>
+
+A household decides together. Classical models treat it as one unit with a regression coefficient.
+This treats it as several people who hold different information and have to reconcile it.
 
 **Where this helps**
 
 | You are trying to… | What you get |
 |---|---|
-| Forecast trip generation under a new road price, fare change, or transit line | Per-household trip counts under the scenario you describe |
+| Forecast trip generation under a new price, fare, or transit line | Per-household trip counts under that scenario |
 | Plan for evacuation or post-disaster relocation | Move or stay, household by household |
 | Test a policy you cannot field a new survey for | A counterfactual run on households already in your data |
-| Fill in a group your survey covers thinly | Decisions for those households, from the records you do have |
 
 **Start here**
 
@@ -55,18 +55,8 @@ conversation among the household members that produced it.
 | Predict household trips | [travel-decision](https://github.com/HDSim-AI/travel-decision) |
 | Predict whether a household moves | [residential-mobility](https://github.com/HDSim-AI/residential-mobility) |
 | Point it at OpenAI, Ollama, vLLM, or a university proxy | [Configuration](#configuration) |
-| Model a decision that is neither travel nor moving | [Adding a domain](#adding-a-domain) |
+| Model a decision that is neither | [Adding a domain](#adding-a-domain) |
 | See how it scores against classical baselines | [Results](#results) |
-
-## The approach
-
-A household decides together. Classical models treat it as a single unit with a regression
-coefficient. This library treats it as several people who hold different information and have to
-reconcile it, which is closer to how the decision is actually made.
-
-`hdsim` is the method core of the [HDSim](https://github.com/HDSim-AI) ecosystem. It implements
-PEMAND: persona-enriched multi-agent negotiation. Domain packages add the survey loaders and
-configuration for a specific decision; the pipeline itself does not change between them.
 
 ## Quick start
 
@@ -79,28 +69,20 @@ hdsim demo
 ```
 
 ```
-Household 23001767  (2 members)
-
 Opening positions, proposed independently
   Husband                2 trips
   Wife                   4 trips
 
 Round 1
-  Husband: I know you're planning to go grocery shopping tomorrow, so that's two one-way
-           trips. Off the top of my head, I'd say we have 2 trips planned.
-  Wife:    That sounds a little low. Don't forget you'll be driving to work in the morning
-           and coming back in the afternoon. That's another two trips, so I think the total
-           should actually be 4 trips.
-Round 2
-  Husband: You're right, I completely forgot to count my commute. Adding my drive to work
-           and back with your grocery trip brings us to 4 trips.
-  Wife:    Exactly. I don't think we've missed anything else, so 4 trips sounds right to me.
-
+  Wife: That sounds a little low. Don't forget you'll be driving to work in the morning
+        and coming back in the afternoon. That's another two trips, so I think the total
+        should actually be 4 trips.
+  …
 Agreed: 4 trips
 ```
 
-That is the point of the method in one example. The husband is wrong at the start, the wife knows
-something he has forgotten, and the household total moves because she says it.
+That is the method in one example. The husband is wrong at the start, the wife knows something he
+has forgotten, and the household total moves because she says it.
 
 ## Running it live
 
@@ -123,27 +105,7 @@ for turn in household.transcript:
     print(turn["round"], turn["speaker"], turn["text"])
 ```
 
-## How it works
-
-```
-survey record
-     │
-     ├─ [1] facts        every field becomes a first-person sentence
-     ├─ [2] capsule      an LLM writes them into a paragraph, checked for invented content
-     ├─ [3] roster       each member is told who else is in the household
-     └─ [4] constructs   attitude, subjective norm, perceived behavioral control
-     │
-     ▼
-[5] proposal      every member answers alone, in parallel
-     │
-     ▼
-[6] negotiation   members discuss and correct each other, moderated
-     │
-     ▼
-household decision
-```
-
-Three details matter more than they look.
+## Three details that matter more than they look
 
 **Proposals run in parallel.** Asking members one after another lets later ones anchor on earlier
 ones, so the household agrees because of turn order rather than because of anything about the
@@ -192,26 +154,22 @@ To run weights locally instead: `pip install -e '.[local]'`.
 
 A decision domain is data, not code. Supply a `DomainConfig` and the pipeline runs unchanged.
 
-```python
-from hdsim.core import DecisionTask, DomainConfig
+[`examples/minimal_domain.py`](examples/minimal_domain.py) is a complete one, in one file, that
+runs with no API key:
 
-ENERGY = DomainConfig(
-    name="energy",
-    task=DecisionTask(
-        name="thermostat",
-        domain="household energy use",
-        context="this winter",
-        target_description="the temperature the household sets the thermostat to",
-        unit="degrees",
-    ),
-    fact_columns=["AGE", "INCOME", "HOME_TYPE"],
-    translations={"AGE": lambda v: f"I am {v} years old."},
-    banned_patterns=[r"\bthermostat\b"],   # never let the persona state the answer
-)
+```bash
+python examples/minimal_domain.py
 ```
 
-`banned_patterns` is not optional in practice. Persona text is written before the household
-decides, so if it names the quantity under discussion the agents are no longer deciding anything.
+Four things differ between domains: what is being decided, how a survey row reads in English, what
+a persona may never say, and how members are introduced to each other. The example marks all four.
+[CONTRIBUTING.md](CONTRIBUTING.md) covers the rest — the loader, the prompts, and the baseline a
+domain needs before it is a result rather than a demo.
+
+One of the four is worth stating here, because it is the one that quietly ruins an evaluation.
+**`banned_patterns` is not optional.** Persona text is written before the household decides, so if
+it names the quantity under discussion the agents are no longer deciding anything, and the numbers
+come out excellent and meaningless.
 
 ## Results
 
@@ -243,9 +201,6 @@ decision. A domain package adds a survey loader and one `DomainConfig`; the pipe
 | `hdsim.travel` | [travel-decision](https://github.com/HDSim-AI/travel-decision) | How many trips the household makes tomorrow |
 | `hdsim.mobility` | [residential-mobility](https://github.com/HDSim-AI/residential-mobility) | Whether the household moves |
 
-All three install alongside each other: `hdsim` owns `hdsim.core`, and each domain owns its own
-subpackage under the same namespace.
-
 ## Layout
 
 `hdsim` is a namespace package. This distribution owns `hdsim.core`; the domain packages own
@@ -268,9 +223,16 @@ hdsim/core/
 
 ## Contributing
 
-New decision domains, survey loaders and evaluations are all welcome. Open an issue describing the
-decision you want to model before writing much code, so the `DomainConfig` shape can be checked
-first.
+A new decision domain is one file. Copy
+[`examples/minimal_domain.py`](examples/minimal_domain.py), change the four marked places, and run
+it with no API key:
+
+```bash
+python examples/minimal_domain.py
+```
+
+[CONTRIBUTING.md](CONTRIBUTING.md) walks through that, and through improving an existing domain or
+changing the core.
 
 ## Citation
 

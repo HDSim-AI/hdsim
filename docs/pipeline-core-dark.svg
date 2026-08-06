@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 150" width="900" height="150" role="img" aria-label="A survey record becomes personas, then independent proposals, then a moderated negotiation, then the household decision">
+<defs><style>.t{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}.m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}</style></defs>
+<rect x="0.0" y="22" width="156" height="104" rx="11" fill="#161d22" stroke="#2b3a34" stroke-width="1.5"/>
+<text x="15.0" y="52" class="t" font-size="14" font-weight="650" fill="#e2eae6">Survey record</text>
+<text x="15.0" y="78" class="t" font-size="12.5" fill="#93a49e">one row per</text>
+<text x="15.0" y="97" class="t" font-size="12.5" fill="#93a49e">household member</text>
+<rect x="186.0" y="22" width="156" height="104" rx="11" fill="#161d22" stroke="#2b3a34" stroke-width="1.5"/>
+<text x="201.0" y="52" class="t" font-size="14" font-weight="650" fill="#e2eae6">Persona</text>
+<text x="201.0" y="78" class="t" font-size="12.5" fill="#93a49e">facts, then attitude,</text>
+<text x="201.0" y="97" class="t" font-size="12.5" fill="#93a49e">norm and control</text>
+<path d="M162.0 74.0 h18" stroke="#3c4d45" stroke-width="1.5" fill="none"/>
+<path d="M176.0 70.0 l5 4 l-5 4" stroke="#3c4d45" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="372.0" y="22" width="156" height="104" rx="11" fill="#161d22" stroke="#2b3a34" stroke-width="1.5"/>
+<text x="387.0" y="52" class="t" font-size="14" font-weight="650" fill="#e2eae6">Proposal</text>
+<text x="387.0" y="78" class="t" font-size="12.5" fill="#93a49e">every member alone,</text>
+<text x="387.0" y="97" class="t" font-size="12.5" fill="#93a49e">in parallel</text>
+<path d="M348.0 74.0 h18" stroke="#3c4d45" stroke-width="1.5" fill="none"/>
+<path d="M362.0 70.0 l5 4 l-5 4" stroke="#3c4d45" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="558.0" y="22" width="156" height="104" rx="11" fill="#161d22" stroke="#2b3a34" stroke-width="1.5"/>
+<text x="573.0" y="52" class="t" font-size="14" font-weight="650" fill="#e2eae6">Negotiation</text>
+<text x="573.0" y="78" class="t" font-size="12.5" fill="#93a49e">members correct</text>
+<text x="573.0" y="97" class="t" font-size="12.5" fill="#93a49e">each other, moderated</text>
+<path d="M534.0 74.0 h18" stroke="#3c4d45" stroke-width="1.5" fill="none"/>
+<path d="M548.0 70.0 l5 4 l-5 4" stroke="#3c4d45" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="744.0" y="22" width="156" height="104" rx="11" fill="#172a22" stroke="#5fbf95" stroke-width="1.5"/>
+<text x="759.0" y="52" class="t" font-size="14" font-weight="650" fill="#5fbf95">Decision</text>
+<text x="759.0" y="78" class="m" font-size="12.5" fill="#e2eae6">14 trips</text>
+<text x="759.0" y="97" class="m" font-size="12.5" fill="#e2eae6">move: yes</text>
+<path d="M720.0 74.0 h18" stroke="#3c4d45" stroke-width="1.5" fill="none"/>
+<path d="M734.0 70.0 l5 4 l-5 4" stroke="#3c4d45" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
