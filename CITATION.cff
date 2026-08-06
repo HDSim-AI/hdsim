@@ -2,6 +2,8 @@ cff-version: 1.2.0
 title: "PEMAND: Persona-Enriched Multi-Agent Negotiation for Household Decision-Making"
 message: "If you use this software or method, please cite the paper below."
 type: software
+version: 0.1.0.dev0
+date-released: "2026-08-06"
 authors:
   - family-names: Sun
     given-names: Yuran
@@ -25,6 +27,11 @@ preferred-citation:
   year: 2026
   journal: "arXiv preprint arXiv:2604.10475"
   url: "https://arxiv.org/abs/2604.10475"
+  doi: "10.48550/arXiv.2604.10475"
+  identifiers:
+    - type: other
+      value: "arXiv:2604.10475"
+      description: "arXiv preprint identifier"
   authors:
     - family-names: Sun
       given-names: Yuran
