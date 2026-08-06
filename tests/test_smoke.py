@@ -245,25 +245,34 @@ def test_asking_for_personas_says_so_when_there_are_none():
 
 
 def test_every_documented_import_resolves():
-    """The README and the examples are executable claims. `hdsim` is a namespace package with
-    nothing at top level, so `from hdsim import x` reads fine and fails at runtime."""
+    """The README and the examples are executable claims.
+
+    `hdsim` is a namespace package with nothing at top level, so `from hdsim import x` reads fine
+    and fails at runtime. A sibling domain package is a different case: the README may reference
+    `hdsim.travel` while this distribution does not depend on it, so a module that is simply not
+    installed is skipped. A module that IS installed must have every name the docs claim.
+    """
     import importlib
     import pathlib
     import re
 
     root = pathlib.Path(__file__).resolve().parent.parent
     sources = [root / "README.md", *sorted((root / "examples").glob("*.py"))]
-    checked = 0
+    checked, skipped = 0, 0
     for path in sources:
         if not path.is_file():
             continue
         for module, names in re.findall(r"^from (hdsim[\w.]*) import ([^\n#]+)",
                                         path.read_text(), re.MULTILINE):
-            mod = importlib.import_module(module)
+            try:
+                mod = importlib.import_module(module)
+            except ModuleNotFoundError:
+                skipped += 1        # a sibling package this distribution does not require
+                continue
             for name in (n.strip() for n in names.split(",")):
                 assert hasattr(mod, name), f"{path.name}: {module} has no {name!r}"
                 checked += 1
-    assert checked, "no documented imports found to check"
+    assert checked, f"no documented imports could be checked ({skipped} skipped)"
 
 
 # --- a yes or no is not a sum -------------------------------------------------------------------
