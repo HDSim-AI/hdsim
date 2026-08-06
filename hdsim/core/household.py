@@ -142,6 +142,7 @@ class Household:
             consensus_value=d.get("consensus_value"),
             transcript=d.get("transcript", []),
             rounds=d.get("rounds", 0),
+            unit=d.get("unit", ""),
         )
 
     @classmethod
