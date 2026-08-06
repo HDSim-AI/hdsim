@@ -29,10 +29,12 @@ THERMOSTAT = DecisionTask(
 # One entry per column you want the persona to know about. A value maps through a dict or a
 # function. Columns you leave out are simply not mentioned.
 
+# Keys are STRINGS. A survey row can arrive as 1, "1" or 1.0 depending on the reader, so
+# `render_fact` matches on the string form. An int-keyed dict silently renders no fact at all.
 TRANSLATIONS = {
     "AGE": lambda v: f"I am {v} years old.",
-    "WORKS_FROM_HOME": {1: "I work from home most days.", 2: "I go into a workplace."},
-    "HOME_TYPE": {1: "I live in a detached house.", 2: "I live in an apartment."},
+    "WORKS_FROM_HOME": {"1": "I work from home most days.", "2": "I go into a workplace."},
+    "HOME_TYPE": {"1": "I live in a detached house.", "2": "I live in an apartment."},
 }
 
 # 3. WHAT A PERSONA MAY NEVER SAY ----------------------------------------------------------------
@@ -55,6 +57,28 @@ def relate(_me: Member, other: Member) -> str:
     return "someone I live with" if other.get("AGE", 0) >= 18 else "a child I live with"
 
 
+# 5. THE PROMPTS THAT TURN FACTS INTO BEHAVIOURAL CONSTRUCTS -------------------------------------
+# Core ships no default on purpose: a domain running another domain's prompt produces a confident
+# wrong answer with nothing to flag it. The parser needs exactly these four labels back. Keep
+# `{{ANCHOR}}` if you set `anchors`/`anchor_for`, or the prior you measured is silently discarded.
+
+COPB_SYSTEM = """You are a behavioral scientist applying the Theory of Planned Behavior to
+household energy use. The share of comparable households that set a low winter thermostat is
+{{ANCHOR}}. Treat that as a starting point to reason against, never as a threshold.
+
+Respond STRICTLY in this format:
+Attitude: <2-3 sentences on how this person feels about heating cost and comfort>
+Subjective Norm: <2-3 sentences on what the rest of the household expects>
+Perceived Behavioral Control: <2-3 sentences on what they can actually change>
+Final Answer: <integer between 55 and 80>
+"""
+
+COPB_USER = """Persona:
+{persona}
+
+They are a {role_hint} in this household. Analyse them using the format above.
+"""
+
 ENERGY = DomainConfig(
     name="energy",
     task=THERMOSTAT,
@@ -63,9 +87,8 @@ ENERGY = DomainConfig(
     banned_patterns=BANNED,
     describe_member=describe,
     relate_members=relate,
-    # copb_system and copb_user hold the prompts that turn facts into attitude, subjective norm
-    # and perceived control. Core ships no default on purpose: a domain running another domain's
-    # prompt produces a confident wrong answer with nothing to flag it. See hdsim/travel/copb.py.
+    copb_system=COPB_SYSTEM,
+    copb_user=COPB_USER,
 )
 
 
@@ -82,13 +105,9 @@ household = Household(
 )
 
 for member in household:
-    member.facts = [
-        ENERGY.translations[column](member.get(column))
-        if callable(ENERGY.translations[column])
-        else ENERGY.translations[column][member.get(column)]
-        for column in ENERGY.fact_columns
-        if member.get(column) is not None
-    ]
+    # facts_for skips a column it cannot render rather than raising, so one unmapped survey code
+    # costs you that sentence and not the run
+    member.facts = ENERGY.facts_for(member.record)
 
 household.build_roster(ENERGY.describe_member, ENERGY.relate_members)
 
