@@ -1,6 +1,7 @@
 """Smoke tests. These must pass with no API key and no network."""
 
 from hdsim.core import DecisionTask, DomainConfig, Household, Member, parse_value, replay
+from hdsim.core.negotiate import _read_turn
 
 
 def _config():
@@ -119,3 +120,39 @@ def test_number_check_ignores_how_a_number_is_written():
     # a genuinely dropped number is still caught
     assert "dropped facts" in (check_capsule("My area is dense and I own vehicles.",
                                              facts, cfg) or "")
+
+
+def test_bool_proposal_parses_an_integer_answer():
+    """A yes or no domain gets "FINAL_VALUE: 1" back, not the word "yes"."""
+    task = DecisionTask(name="moved", domain="mobility", context="two years",
+                        target_description="whether the household moves", unit="a yes or no",
+                        final_label="FINAL_VALUE", value_type=bool, value_range=(0, 1))
+    config = DomainConfig(name="m", task=task)
+    assert parse_value("reasons\n\nFINAL_VALUE: 1", config) is True
+    assert parse_value("reasons\n\nFINAL_VALUE: 0", config) is False
+    assert parse_value("reasons\n\nFINAL_VALUE: yes", config) is True
+    assert parse_value("no label anywhere", config) is None
+
+
+def test_turn_keeps_dialogue_and_drops_the_reward_fields():
+    names = {1: "Head", 2: "Spouse"}
+    turn = _read_turn(
+        "[Member 1] ACKNOWLEDGE: I drive to work and back. MY_VALUE: 2 PREFERRED_TOTAL: 6", names)
+    assert turn["speaker"] == "Head"
+    assert turn["text"] == "I drive to work and back."
+    # a bare cross-reference is not dialogue and must not become a turn
+    assert _read_turn("[Member 2] ACKNOWLEDGE: [Member 1] MY_VALUE: 4 PREFERRED_TOTAL: 4",
+                      names)["text"] == ""
+    assert _read_turn("FINAL_CONSENSUS: 6", names) is None
+
+
+def test_a_yes_or_no_result_reads_as_yes_or_no():
+    record = {"household_id": "x", "unit": "a yes or no", "consensus_value": False,
+              "ground_truth": None,
+              "members": [{"person_id": "1", "role": "Head", "proposal_value": True,
+                           "capsule": ""}],
+              "transcript": [{"round": 1, "speaker": "Head", "text": "I would rather stay."}]}
+    out = replay.render(record)
+    assert "Agreed: no" in out
+    assert "a yes or no" not in out
+    assert "Head                   yes" in out

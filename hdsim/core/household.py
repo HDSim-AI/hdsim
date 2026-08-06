@@ -65,6 +65,10 @@ class Household:
     transcript: list[dict[str, Any]] = field(default_factory=list)
     rounds: int = 0
 
+    # What the decided value counts, e.g. "trips". Set from the domain when the household
+    # negotiates, so a saved record can be read back without also carrying its DomainConfig.
+    unit: str = ""
+
     def __len__(self) -> int:
         return len(self.members)
 
@@ -103,6 +107,30 @@ class Household:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+    def to_record(self) -> dict[str, Any]:
+        """The household as a replay recording.
+
+        Keeps what a reader of the transcript needs and drops the rest: no raw survey record, no
+        roster, no TPB block. `label` is written out as `role` because that is what a transcript
+        calls a person. This is the shape `hdsim demo` plays back.
+        """
+        return {
+            "household_id": self.household_id,
+            "unit": self.unit,
+            "consensus_value": self.consensus_value,
+            "ground_truth": self.ground_truth,
+            "members": [
+                {
+                    "person_id": str(m.person_id),
+                    "role": m.label or f"Member {m.person_id}",
+                    "proposal_value": m.proposal_value,
+                    "capsule": m.capsule,
+                }
+                for m in self.members
+            ],
+            "transcript": list(self.transcript),
+        }
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> Household:

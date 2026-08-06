@@ -14,6 +14,7 @@ household.
 
 from __future__ import annotations
 
+import re
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
@@ -21,6 +22,31 @@ from . import stage2
 from .backends import Client, get_client
 from .domain import DomainConfig
 from .household import Household, Member
+
+# A turn comes back as
+#     [Member 2] ACKNOWLEDGE: <what this member says> MY_VALUE: 4 PREFERRED_TOTAL: 14
+# The prose sits between the acknowledgement and the first structured field. Those fields drive
+# the ReST reward and are not meant to be read, so a transcript keeps the dialogue and drops them.
+# This is the same split the published sample transcripts were rendered with.
+_TURN_RE = re.compile(
+    rf"\[Member\s+(?P<pid>\d+)\]\s*(?:ACKNOWLEDGE\s*[:=]\s*)?(?P<text>.*?)"
+    rf"(?=\s*{re.escape(stage2.MEMBER_LABEL)}\s*[:=]|\s*{re.escape(stage2.TOTAL_LABEL)}\s*[:=]|$)",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _read_turn(line: str, names: dict[int, str]) -> dict[str, Any] | None:
+    """One completion line -> a transcript turn, or None if it carries no dialogue."""
+    m = _TURN_RE.search(line)
+    if not m:
+        return None
+    text = m.group("text").strip().strip("-–—:").strip()
+    # A model that fills the acknowledgement slot with a bare cross-reference rather than a
+    # sentence leaves nothing worth showing.
+    if not text or re.fullmatch(r"\[?Member\s+\d+\]?", text, re.IGNORECASE):
+        text = ""
+    pid = int(m.group("pid"))
+    return {"person_id": pid, "speaker": names.get(pid, f"Member {pid}"), "text": text}
 
 
 def _task_dict(config: DomainConfig) -> dict[str, str]:
@@ -56,11 +82,16 @@ def parse_value(text: str, config: DomainConfig) -> float | bool | None:
         return None
 
     if config.task.value_type is bool:
-        import re
         m = re.search(rf"{re.escape(config.task.final_label)}\s*[:=]\s*(.+)", text, re.IGNORECASE)
         if not m:
             return None
         candidate = m.group(1).strip().lower()
+        # The proposal prompt asks for the label followed by an integer, and that is what models
+        # actually return: "FINAL_VALUE: 1". Read 1/0 first, then fall back to words, so a yes or
+        # no domain parses the same answer an integer domain would.
+        digit = re.match(r"(-?\d+)\b", candidate)
+        if digit:
+            return int(digit.group(1)) != 0
         true_words = {"true", "yes", "will move", "move", "relocate"}
         false_words = {"false", "no", "will not move", "stay", "remain"}
         for word in sorted(true_words | false_words, key=len, reverse=True):
@@ -117,11 +148,28 @@ def negotiate(household: Household, config: DomainConfig,
     ], max_tokens=max_tokens)
 
     result = stage2.parse_completion_to_result(text, len(household))
-    household.transcript = [{"round": 1, "speaker": "", "text": line}
-                            for line in result["transcript"]]
-    household.rounds = result["n_rounds"]
+
+    # Number the rounds by watching for a member speaking again: the completion is one block per
+    # member per round, so a repeat means the discussion has come back around.
+    names = {m.person_id: (m.label or f"Member {m.person_id}") for m in household}
+    turns: list[dict[str, Any]] = []
+    round_no, seen = 1, set()
+    for line in result["transcript"]:
+        turn = _read_turn(line, names)
+        if turn is None or not turn["text"]:
+            continue
+        if turn["person_id"] in seen:
+            round_no += 1
+            seen = set()
+        seen.add(turn.pop("person_id"))
+        turns.append({"round": round_no, **turn})
+
+    household.transcript = turns
+    household.rounds = max(round_no, result["n_rounds"]) if turns else result["n_rounds"]
+    household.unit = config.task.unit
+
     value = result["final_value"]
-    if value is not None and config.task.value_type is not bool:
+    if value is not None:
         low, high = config.task.value_range
         value = config.task.value_type(max(low, min(high, value)))
     household.consensus_value = value
