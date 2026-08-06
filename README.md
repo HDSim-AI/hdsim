@@ -50,6 +50,7 @@ This treats it as several people who hold different information and have to reco
 
 | You want to… | Go to |
 |---|---|
+| See it run, with nothing installed | [Live demo](https://yushundong.github.io/pemand_simulation/pemand_official_site.html) |
 | Watch a household negotiate, with no API key | [Quick start](#quick-start) |
 | Run it against your own model | [Running it live](#running-it-live) |
 | Predict household trips | [travel-decision](https://github.com/HDSim-AI/travel-decision) |
@@ -136,9 +137,9 @@ HDSIM_BASE_URL=https://api.openai.com/v1
 | Together | `https://api.together.xyz/v1` |
 | OpenRouter | `https://openrouter.ai/api/v1` |
 
-A member proposing a number is a cheap call. The moderator checking consistency and feasibility is
-the one worth paying for. Set a role to override it; anything left blank falls back to
-`HDSIM_MODEL`.
+A member proposing a number is a cheap call. The consensus call reasons over the whole household
+and is the one worth paying for; `HDSIM_MODERATOR_MODEL` selects the model for it. Anything left
+blank falls back to `HDSIM_MODEL`.
 
 ```bash
 HDSIM_PERSONA_MODEL=
