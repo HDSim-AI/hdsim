@@ -5,15 +5,60 @@
 **Household decision simulation through multi-agent negotiation.**
 
 <p>
-<a href="https://arxiv.org/abs/2604.10475"><img src="https://img.shields.io/badge/arXiv-2604.10475-b31b1b?style=flat-square"></a>
-<img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square">
-<img src="https://img.shields.io/badge/python-3.10%2B-informational?style=flat-square">
-<img src="https://img.shields.io/badge/HDSim-method%20core-17212b?style=flat-square">
+<a href="https://github.com/HDSim-AI/hdsim"><img src="https://img.shields.io/github/stars/HDSim-AI/hdsim?style=flat-square&amp;logo=github" alt="Stars"></a>
+<a href="https://github.com/HDSim-AI/hdsim/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/HDSim-AI/hdsim/ci.yml?branch=main&amp;style=flat-square&amp;label=CI" alt="CI"></a>
+<a href="https://github.com/HDSim-AI/hdsim/blob/main/pyproject.toml"><img src="https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square" alt="Python 3.10+"></a>
+<a href="./LICENSE"><img src="https://img.shields.io/github/license/HDSim-AI/hdsim?style=flat-square" alt="MIT License"></a>
+<a href="https://arxiv.org/abs/2604.10475"><img src="https://img.shields.io/badge/arXiv-2604.10475-b31b1b?style=flat-square" alt="Paper"></a>
+<a href="https://yushundong.github.io/pemand_simulation/pemand_official_site.html"><img src="https://img.shields.io/badge/Live%20Demo-HDSim-2f7d5f?style=flat-square" alt="Live Demo"></a>
 </p>
+
+<!-- Uncomment both once the package is published to PyPI:
+<a href="https://pypi.org/project/hdsim/"><img src="https://img.shields.io/pypi/v/hdsim?style=flat-square" alt="PyPI version"></a>
+<a href="https://pepy.tech/project/hdsim"><img src="https://static.pepy.tech/badge/hdsim" alt="PyPI downloads"></a>
+-->
+
+
+<img src="./docs/demo.gif" width="100%" alt="hdsim demo replaying a recorded household negotiation that settles on 4 trips">
 
 </div>
 
 ---
+
+## 🧭 What can hdsim do?
+
+`hdsim` predicts what a household decides, from the survey records you already have. Feed it rows
+from a travel survey or a panel study and it returns a decision for each household, plus the
+conversation among the household members that produced it.
+
+- predicts one household at a time, rather than an average over a segment
+- returns the transcript behind every number, so a prediction can be inspected and argued with
+- answers questions the survey never asked, on the households it already covers
+- runs offline from bundled recordings, so you can see the output before configuring anything
+- takes a new decision domain as configuration, not as a new pipeline
+
+**Where this helps**
+
+| You are trying to… | What you get |
+|---|---|
+| Forecast trip generation under a new road price, fare change, or transit line | Per-household trip counts under the scenario you describe |
+| Plan for evacuation or post-disaster relocation | Move or stay, household by household |
+| Test a policy you cannot field a new survey for | A counterfactual run on households already in your data |
+| Fill in a group your survey covers thinly | Decisions for those households, from the records you do have |
+
+**Start here**
+
+| You want to… | Go to |
+|---|---|
+| Watch a household negotiate, with no API key | [Quick start](#quick-start) |
+| Run it against your own model | [Running it live](#running-it-live) |
+| Predict household trips | [travel-decision](https://github.com/HDSim-AI/travel-decision) |
+| Predict whether a household moves | [residential-mobility](https://github.com/HDSim-AI/residential-mobility) |
+| Point it at OpenAI, Ollama, vLLM, or a university proxy | [Configuration](#configuration) |
+| Model a decision that is neither travel nor moving | [Adding a domain](#adding-a-domain) |
+| See how it scores against classical baselines | [Results](#results) |
+
+## The approach
 
 A household decides together. Classical models treat it as a single unit with a regression
 coefficient. This library treats it as several people who hold different information and have to
@@ -176,8 +221,10 @@ decides, so if it names the quantity under discussion the agents are no longer d
 | NHTS 2017 | sMAPE ↓ | 50.84 (MLP) | **34.48** |
 | Puget Sound 2023 | MAE ↓ | 2.75 (Random Forest) | **1.99** |
 | Puget Sound 2023 | ±2 Accuracy ↑ | 0.59 (Random Forest) | **0.78** |
+| PSID 2021–2023 | F1 ↑ | 0.55 (Gradient Boosting) | **0.73** |
 
-Table 1, [arXiv:2604.10475v2](https://arxiv.org/abs/2604.10475).
+Table 1, [arXiv:2604.10475v2](https://arxiv.org/abs/2604.10475). The first four rows are trip
+generation, the last is the move-or-stay decision.
 
 ## Domain packages
 
@@ -188,17 +235,22 @@ Table 1, [arXiv:2604.10475v2](https://arxiv.org/abs/2604.10475).
 
 ## Layout
 
+`hdsim` is a namespace package. This distribution owns `hdsim.core`; the domain packages own
+`hdsim.travel` and `hdsim.mobility`, so all three install alongside each other.
+
 ```
-hdsim/
+hdsim/core/
 ├── household.py    Household and Member, shared by every stage
 ├── domain.py       DomainConfig, everything that differs between domains
 ├── persona.py      facts -> capsule -> constructs, with validation
+├── stage1.py       the published persona prompts, labels and parsers
 ├── negotiate.py    parallel proposals, then moderated discussion
+├── stage2.py       the published negotiation prompts, labels and parsers
 ├── backends.py     model access and role configuration
-├── prompts.py      every template, in one file
 ├── replay.py       offline recordings for the demo
 ├── evaluate.py     metrics and a paired bootstrap
-└── cli.py          hdsim demo, hdsim config
+├── cli.py          hdsim demo, hdsim config
+└── fixtures/       bundled recordings the offline demo plays
 ```
 
 ## Contributing
