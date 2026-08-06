@@ -30,7 +30,8 @@ def cmd_demo(args: argparse.Namespace) -> int:
     try:
         record = replay.get(args.household)
     except KeyError as exc:
-        print(str(exc), file=sys.stderr)
+        # str() of a KeyError is the repr of its argument, which wraps the message in quotes.
+        print(exc.args[0], file=sys.stderr)
         return 1
 
     print(replay.render(record, show_personas=args.personas))

@@ -91,6 +91,10 @@ def render(record: dict[str, Any], show_personas: bool = False) -> str:
         lines.append(f"  {role:<22} {_say(member['proposal_value'], unit)}")
         if show_personas and member.get("capsule"):
             lines.append(f"      {member['capsule']}")
+    if show_personas and not any(m.get("capsule") for m in record["members"]):
+        # Better to say so than to look like the flag was ignored. The bundled recordings keep the
+        # dialogue only; a recording you make yourself carries its personas.
+        lines.append("  (this recording does not carry personas)")
     lines.append("")
 
     current = None
