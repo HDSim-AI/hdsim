@@ -16,7 +16,7 @@ Quick start, no API key required:
 
 With a key, on your own data:
 
-    from hdsim import Household, build_personas, simulate
+    from hdsim.core import Household, build_personas, simulate
     from hdsim.travel import NHTS                    # pip install hdsim-travel
 
     household = Household.from_json("household.json")

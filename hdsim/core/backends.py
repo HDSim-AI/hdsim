@@ -12,7 +12,7 @@ Configuration is read in this order, first match wins:
     4. built-in defaults
 
 Roles let you spend money where it matters. A household member proposing a number is a cheap call;
-the moderator checking consistency and feasibility is worth a stronger model. Set `HDSIM_MODEL` to
+the whole-household consensus call is worth a stronger model. Set `HDSIM_MODEL` to
 run everything on one model, then override a single role if you want to.
 
     HDSIM_MODEL=gpt-4o-mini
@@ -21,7 +21,7 @@ run everything on one model, then override a single role if you want to.
 
     HDSIM_PERSONA_MODEL=      # persona construction
     HDSIM_MEMBER_MODEL=       # member proposals and turns
-    HDSIM_MODERATOR_MODEL=    # consistency and feasibility checks
+    HDSIM_MODERATOR_MODEL=    # the whole-household consensus call
 
 Local weights are not required and not installed by default. `pip install hdsim[local]` adds a
 transformers backend for offline or cluster use.
@@ -153,7 +153,7 @@ def check() -> dict[str, dict[str, str]]:
 
     Useful as a first command when something is misconfigured:
 
-        python -c "from hdsim.backends import check; print(check())"
+        python -c "from hdsim.core.backends import check; print(check())"
     """
     out = {}
     for role in ROLES:
