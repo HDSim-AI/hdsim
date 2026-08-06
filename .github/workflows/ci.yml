@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: tests (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: pytest -q
+
+  wheel:
+    name: wheel installs clean
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build
+      - run: python -m build --wheel
+      # An editable install leaves the source tree on disk, so a data file that was never
+      # declared as package-data still resolves and nothing fails. Install the built wheel into
+      # a clean interpreter and import from a directory outside the repo, where the working
+      # directory cannot stand in for a missing file.
+      - name: Import the built wheel from outside the repo
+        run: |
+          python -m venv /tmp/v
+          /tmp/v/bin/pip install dist/*.whl
+          cd /tmp && /tmp/v/bin/python -c "import hdsim.core; from hdsim.core import replay; print(len(replay.available()), 'recordings')"
+          cd /tmp && /tmp/v/bin/hdsim demo --list
