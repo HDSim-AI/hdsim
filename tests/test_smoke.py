@@ -1,7 +1,6 @@
 """Smoke tests. These must pass with no API key and no network."""
 
-from hdsim.core import DecisionTask, DomainConfig, Household, Member, parse_value
-from hdsim.core import replay
+from hdsim.core import DecisionTask, DomainConfig, Household, Member, parse_value, replay
 
 
 def _config():

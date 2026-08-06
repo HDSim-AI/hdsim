@@ -9,9 +9,10 @@ added later.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field, asdict
+from collections.abc import Iterator
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 
 @dataclass
@@ -104,7 +105,7 @@ class Household:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "Household":
+    def from_dict(cls, d: dict[str, Any]) -> Household:
         members = [Member(**m) for m in d.get("members", [])]
         return cls(
             household_id=str(d["household_id"]),
@@ -116,7 +117,7 @@ class Household:
         )
 
     @classmethod
-    def from_json(cls, path: str | Path) -> "Household":
+    def from_json(cls, path: str | Path) -> Household:
         return cls.from_dict(json.loads(Path(path).read_text()))
 
     def save(self, path: str | Path) -> None:

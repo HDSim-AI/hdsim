@@ -68,7 +68,6 @@ def check_capsule(text: str, facts: list[str], config: DomainConfig) -> str | No
     The numeric check catches dropped facts directly: a capsule that quietly loses "my household
     owns 2 vehicles" produces an agent that later invents its own vehicle access.
     """
-    import re
 
     ok, _ = stage1.validate_and_clean_persona(text, min_words=1)
     if not ok:

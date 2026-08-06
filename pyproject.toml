@@ -41,7 +41,7 @@ eval = [
 ]
 dev = [
     "pytest>=7.4",
-    "ruff>=0.5",
+    "ruff>=0.16,<0.17",
 ]
 
 [project.scripts]
@@ -63,6 +63,13 @@ include = ["hdsim.core*"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+
+[tool.ruff.lint.per-file-ignores]
+# stage1.py and stage2.py are the published PEMAND implementation, carried over rather than
+# rewritten: the prompt wording, the label scheme and the parsers are the method itself. They stay
+# as published, so lint does not reformat them.
+"hdsim/core/stage1.py" = ["ALL"]
+"hdsim/core/stage2.py" = ["ALL"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

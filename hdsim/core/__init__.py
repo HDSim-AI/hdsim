@@ -32,26 +32,26 @@ from __future__ import annotations
 
 __version__ = "0.1.0.dev0"
 
+from . import stage1, stage2
 from .domain import DecisionTask, DomainConfig
 from .household import Household, Member, load_households
 from .negotiate import negotiate, parse_value, propose, simulate
-from . import stage1, stage2
 from .persona import build_capsule, build_personas, enrich
 
 __all__ = [
-    "__version__",
     "DecisionTask",
     "DomainConfig",
     "Household",
     "Member",
-    "load_households",
+    "__version__",
     "build_capsule",
     "build_personas",
     "enrich",
-    "propose",
+    "load_households",
     "negotiate",
-    "simulate",
     "parse_value",
+    "propose",
+    "simulate",
     "stage1",
     "stage2",
 ]

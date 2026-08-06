@@ -14,8 +14,8 @@ measures which households were sampled. `paired_bootstrap` resamples households,
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 from .household import Household
 
