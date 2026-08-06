@@ -133,7 +133,34 @@ class Household:
         }
 
     @classmethod
+    def from_record(cls, d: dict[str, Any]) -> Household:
+        """Read back what `to_record` wrote.
+
+        A record is deliberately lossy: it keeps the transcript and drops the survey row, the
+        roster and the TPB block. It is the format `hdsim demo` plays, so a run you record and a
+        run you replay have to be the same shape.
+        """
+        return cls(
+            household_id=str(d["household_id"]),
+            members=[
+                Member(
+                    person_id=int(m["person_id"]),
+                    label=m.get("role", ""),
+                    capsule=m.get("capsule", ""),
+                    proposal_value=m.get("proposal_value"),
+                )
+                for m in d.get("members", [])
+            ],
+            ground_truth=d.get("ground_truth"),
+            consensus_value=d.get("consensus_value"),
+            transcript=d.get("transcript", []),
+            unit=d.get("unit", ""),
+        )
+
+    @classmethod
     def from_dict(cls, d: dict[str, Any]) -> Household:
+        if d.get("members") and "role" in d["members"][0]:
+            return cls.from_record(d)          # a record, not a full dump
         members = [Member(**m) for m in d.get("members", [])]
         return cls(
             household_id=str(d["household_id"]),
