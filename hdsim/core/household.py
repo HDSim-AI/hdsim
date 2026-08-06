@@ -92,8 +92,11 @@ class Household:
         `describe(member) -> str` renders one person. `relate(a, b) -> str` names b's relation to a.
         Both are supplied by the domain, since relationship coding is survey specific.
         """
+        # Identity, not person_id: two members sharing an id are still two people, and each has
+        # to see the other. Comparing ids would filter both out and tell each of them they live
+        # alone, in the prompt, with nothing downstream to reveal it.
         for me in self.members:
-            others = [o for o in self.members if o.person_id != me.person_id]
+            others = [o for o in self.members if o is not me]
             if not others:
                 me.roster = "I live alone. There are no other members of my household."
                 continue
