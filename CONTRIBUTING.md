@@ -1,38 +1,72 @@
 # Contributing to HDSim
 
 HDSim exists so that the next household decision use case is cheaper to build than the last one.
-Contributions that make that true are the most valuable kind.
 
-## Ways to contribute
+**Start by finding yourself here.**
 
-| Kind | What it looks like |
+| You want to… | Go to |
 |---|---|
-| **New decision domain** | High-value purchases, energy use, family planning, evacuation |
-| **Survey loader** | Support for another household survey or panel |
-| **Evaluation** | Baselines, ablations, or annotation protocols |
-| **Scenario** | A replayable household case for the demo |
-| **Core improvement** | Persona construction, the negotiation protocol, model backends |
+| Model a decision nobody has built yet | [Add a new domain](#add-a-new-domain) |
+| Improve trips or move-or-stay | [Improve an existing domain](#improve-an-existing-domain) |
+| Support another survey or panel | [Improve an existing domain](#improve-an-existing-domain) |
+| Change persona construction, the negotiation, or a backend | [Change the core](#change-the-core) |
+| Report something wrong | [Open an issue](https://github.com/HDSim-AI/hdsim/issues) |
 
-## Adding a decision domain
+---
 
-A domain is configuration, not a new pipeline. Nothing in `hdsim.core` needs to change.
+## Add a new domain
 
-1. Write a `DomainConfig`. It holds what the household is deciding, how survey codes read in
-   English, the empirical anchor, and which words a persona may never use.
-2. Write a loader that turns survey rows into `Household` and `Member` objects.
-3. Set `DecisionTask.value_type`. Use `int` for a count, as travel does, or `bool` for a yes or no,
-   as residential mobility does. Both are supported and parsed differently.
-4. Set `banned_patterns` to the words that would give the answer away. Persona text is written
-   before the household decides, so a persona that states the outcome has already answered the
-   question the agents are meant to negotiate over. This is the easiest way to produce a result
-   that looks excellent and means nothing.
-5. Add `describe_member` and `relate_members` so members can be introduced to each other. Where the
-   survey does not determine a relationship, return something weaker and true rather than guessing.
+A domain is configuration, not a new pipeline. Nothing in `hdsim.core` changes.
+
+**Copy [`examples/minimal_domain.py`](examples/minimal_domain.py) and change four things.** It is a
+complete working domain in one file and it runs with no API key, so you can see the shape before
+committing to anything:
+
+```bash
+python examples/minimal_domain.py
+```
+
+The four places are marked in the file:
+
+1. **What is being decided** — a `DecisionTask`. `value_type=int` for a count, as travel does, or
+   `bool` for a yes or no, as residential mobility does. Both are parsed, differently.
+2. **How a survey row reads in English** — one entry per column, mapped through a dict or a
+   function.
+3. **What a persona may never say** — `banned_patterns`. Persona text is written before the
+   household decides, so a persona that names the outcome has already answered the question the
+   agents are meant to negotiate. **This is the easiest way to produce a result that looks
+   excellent and means nothing.**
+4. **How members are introduced to each other** — `describe_member` and `relate_members`. Where the
+   survey does not establish a relationship, return something weaker and true rather than guessing.
    A roster that invents a relationship causes the confusion it exists to prevent.
-6. Evaluate against at least one classical baseline. A domain without a baseline is a demo, not a
-   result.
 
-`travel-decision` is the reference implementation. Read it before starting.
+Then two more things before it is a domain rather than a demo:
+
+- **A loader** that turns real survey rows into `Household` and `Member` objects. See
+  [`hdsim/travel/loaders.py`](https://github.com/HDSim-AI/travel-decision/blob/main/hdsim/travel/loaders.py).
+- **The Chain-of-Planned-Behaviour prompts**, `copb_system` and `copb_user`. Core ships no default
+  on purpose: a domain running another domain's prompt gives a confident wrong answer with nothing
+  to flag it.
+- **At least one classical baseline.** A domain without a baseline is a demo, not a result.
+
+[`travel-decision`](https://github.com/HDSim-AI/travel-decision) is the reference implementation and
+the best thing to read once the minimal example makes sense.
+
+## Improve an existing domain
+
+Work in that domain's repository, not here. Loaders for another survey, better fact translations,
+new scenarios and evaluations are all welcome, and none of them require touching the core.
+
+- [`travel-decision`](https://github.com/HDSim-AI/travel-decision) — trips
+- [`residential-mobility`](https://github.com/HDSim-AI/residential-mobility) — move or stay
+
+## Change the core
+
+Persona construction, the negotiation protocol and the model backends live here. Two of these files
+are the published method rather than ordinary code: `hdsim/core/stage1.py` and
+`hdsim/core/stage2.py` carry the prompt wording, the label scheme and the parsers exactly as
+published, and are excluded from lint for that reason. Changing them changes results, so open an
+issue first.
 
 ## Data
 
