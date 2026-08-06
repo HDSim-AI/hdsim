@@ -69,6 +69,13 @@ class DomainConfig:
     describe_member: Callable[[Any], str] | None = None
     relate_members: Callable[[Any, Any], str] | None = None
 
+    # The household roster handed to the negotiation, as `household -> str`. Left unset, the
+    # stage-two roster is used, which recovers attributes from persona text with travel-survey
+    # patterns and reports "unknown" for anything it does not recognise. Set this in any domain
+    # that is not travel: an unrecognised attribute is not neutral, it is stated to the model as
+    # canonical fact and contradicts the member's own persona.
+    household_roster: Callable[[Any], str] | None = None
+
     # The Chain-of-Planned-Behaviour prompts. These are domain specific: the travel version asks a
     # transportation psychologist about daily trips, the mobility version asks a demographic
     # sociologist about relocation, and each carries its own empirical rules. Core supplies no
