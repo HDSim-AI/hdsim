@@ -42,9 +42,9 @@ This treats it as several people who hold different information and have to reco
 
 | You are trying to… | What you get |
 |---|---|
-| Forecast trip generation under a new price, fare, or transit line | Per-household trip counts under that scenario |
+| Forecast trip generation under a new price, fare, or transit line | A trip count for each household, from its own record |
 | Plan for evacuation or post-disaster relocation | Move or stay, household by household |
-| Test a policy you cannot field a new survey for | A counterfactual run on households already in your data |
+| Test a policy you cannot field a new survey for | Predictions for the households you already have, with no new fieldwork |
 
 **Start here**
 
@@ -153,7 +153,9 @@ To run weights locally instead: `pip install -e '.[local]'`.
 
 ## Adding a domain
 
-A decision domain is data, not code. Supply a `DomainConfig` and the pipeline runs unchanged.
+A decision domain plugs into the pipeline rather than changing it. You supply a `DomainConfig`
+holding the decision, the fact rendering, the prompts and a few small functions. Nothing in
+`hdsim.core` changes.
 
 [`examples/minimal_domain.py`](examples/minimal_domain.py) is a complete one, in one file, that
 runs with no API key:
@@ -162,12 +164,13 @@ runs with no API key:
 python examples/minimal_domain.py
 ```
 
-Four things differ between domains: what is being decided, how a survey row reads in English, what
-a persona may never say, and how members are introduced to each other. The example marks all four.
-[CONTRIBUTING.md](CONTRIBUTING.md) covers the rest — the loader, the prompts, and the baseline a
+Six things differ between domains: what is being decided, how a survey row reads in English, what a
+persona may never say, how members are introduced to each other, the behavioural prompts, and the
+roster the household is given about itself. The example marks all six.
+[CONTRIBUTING.md](CONTRIBUTING.md) covers the two things left: the loader, and the baseline a
 domain needs before it is a result rather than a demo.
 
-One of the four is worth stating here, because it is the one that quietly ruins an evaluation.
+One of the six is worth stating here, because it is the one that quietly ruins an evaluation.
 **`banned_patterns` is not optional.** Persona text is written before the household decides, so if
 it names the quantity under discussion the agents are no longer deciding anything, and the numbers
 come out excellent and meaningless.
@@ -225,7 +228,7 @@ hdsim/core/
 ## Contributing
 
 A new decision domain is one file. Copy
-[`examples/minimal_domain.py`](examples/minimal_domain.py), change the four marked places, and run
+[`examples/minimal_domain.py`](examples/minimal_domain.py), change the six marked places, and run
 it with no API key:
 
 ```bash

@@ -18,7 +18,7 @@ HDSim exists so that the next household decision use case is cheaper to build th
 
 A domain is configuration, not a new pipeline. Nothing in `hdsim.core` changes.
 
-**Copy [`examples/minimal_domain.py`](examples/minimal_domain.py) and change four things.** It is a
+**Copy [`examples/minimal_domain.py`](examples/minimal_domain.py) and change six things.** It is a
 complete working domain in one file and it runs with no API key, so you can see the shape before
 committing to anything:
 
@@ -26,7 +26,7 @@ committing to anything:
 python examples/minimal_domain.py
 ```
 
-The four places are marked in the file:
+The six places are marked in the file:
 
 1. **What is being decided** — a `DecisionTask`. `value_type=int` for a count, as travel does, or
    `bool` for a yes or no, as residential mobility does. Both are parsed, differently.
@@ -39,15 +39,22 @@ The four places are marked in the file:
 4. **How members are introduced to each other** — `describe_member` and `relate_members`. Where the
    survey does not establish a relationship, return something weaker and true rather than guessing.
    A roster that invents a relationship causes the confusion it exists to prevent.
+5. **The Chain-of-Planned-Behaviour prompts** — `copb_system` and `copb_user`. Core ships no
+   default on purpose: a domain running another domain's prompt gives a confident wrong answer with
+   nothing to flag it.
+6. **The household roster** — `household_roster`. Leave it unset and the negotiation uses the
+   core's, which recovers attributes by matching persona text against travel-survey phrasings. On
+   any other domain those miss and the household is told "non-worker, non-driver, age ?" **as
+   canonical fact**, contradicting the personas you just wrote. Print it once before trusting a run.
 
 Then two more things before it is a domain rather than a demo:
 
 - **A loader** that turns real survey rows into `Household` and `Member` objects. See
   [`hdsim/travel/loaders.py`](https://github.com/HDSim-AI/travel-decision/blob/main/hdsim/travel/loaders.py).
-- **The Chain-of-Planned-Behaviour prompts**, `copb_system` and `copb_user`. Core ships no default
-  on purpose: a domain running another domain's prompt gives a confident wrong answer with nothing
-  to flag it.
-- **At least one classical baseline.** A domain without a baseline is a demo, not a result.
+  Give every member a distinct `person_id`, and set `ground_truth` to `None` rather than to a guess
+  when the survey does not answer.
+- **At least one classical baseline.** A domain without a baseline is a demo, not a result. Score it
+  with `from hdsim.core import score` for a count, or `score_binary` for a yes or no.
 
 [`travel-decision`](https://github.com/HDSim-AI/travel-decision) is the reference implementation and
 the best thing to read once the minimal example makes sense.

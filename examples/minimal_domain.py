@@ -5,7 +5,7 @@
 Runs with no API key: it builds the domain and shows what each member will say about itself. The
 last few lines need a key, and are the same two calls every domain uses.
 
-Copy this file, change the four marked places, and you have a new domain. Nothing in `hdsim.core`
+Copy this file, change the six marked places, and you have a new domain. Nothing in `hdsim.core`
 needs to change.
 """
 
@@ -79,6 +79,23 @@ COPB_USER = """Persona:
 They are a {role_hint} in this household. Analyse them using the format above.
 """
 
+# 6. WHAT THE HOUSEHOLD IS TOLD ABOUT ITSELF -----------------------------------------------------
+# Without this the negotiation uses the core's roster, which recovers attributes by pattern-matching
+# the persona text against travel-survey phrasings ("I am a worker", "household owns 2 vehicles").
+# On any other domain those miss, and the household is told "non-worker, non-driver, age ?" as
+# canonical fact, contradicting personas that say otherwise. Write your own. It is worth printing
+# it once before you trust a run.
+
+
+def roster(household) -> str:
+    lines = ["=== HOUSEHOLD ROSTER ===",
+             "(canonical; do NOT invent any attribute not stated below)",
+             f"Household size: {len(household.members)}.", "", "Members:"]
+    for m in household.members:
+        lines.append(f"  - {m.label or f'Member {m.person_id}'}: {describe(m)}")
+    return "\n".join(lines + ["========================="])
+
+
 ENERGY = DomainConfig(
     name="energy",
     task=THERMOSTAT,
@@ -87,6 +104,7 @@ ENERGY = DomainConfig(
     banned_patterns=BANNED,
     describe_member=describe,
     relate_members=relate,
+    household_roster=roster,
     copb_system=COPB_SYSTEM,
     copb_user=COPB_USER,
 )
@@ -118,6 +136,9 @@ for member in household:
         print(f"  {fact}")
     print(f"  roster: {member.roster.splitlines()[1] if member.roster else '(none)'}\n")
 
+print("This is what the household will be told about itself:\n")
+print(ENERGY.household_roster(household))
+print()
 print("To run the negotiation, set HDSIM_API_KEY and add:\n")
 print("    from hdsim.core import build_personas, simulate")
 print("    build_personas(household, ENERGY)")
