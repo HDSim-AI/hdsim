@@ -35,9 +35,6 @@ _TURN_RE = re.compile(
 )
 
 
-_OWN_VALUE_RE = re.compile(rf"{re.escape(stage2.MEMBER_LABEL)}\s*[:=]\s*(-?\d+)", re.IGNORECASE)
-
-
 def _read_turn(line: str, names: dict[int, str]) -> dict[str, Any] | None:
     """One completion line -> a transcript turn, or None if it carries no dialogue."""
     m = _TURN_RE.search(line)
@@ -49,30 +46,24 @@ def _read_turn(line: str, names: dict[int, str]) -> dict[str, Any] | None:
     if not text or re.fullmatch(r"\[?Member\s+\d+\]?", text, re.IGNORECASE):
         text = ""
     pid = int(m.group("pid"))
-    own = _OWN_VALUE_RE.search(line)
-    return {"person_id": pid, "speaker": names.get(pid, f"Member {pid}"), "text": text,
-            "own_value": int(own.group(1)) if own else None}
+    return {"person_id": pid, "speaker": names.get(pid, f"Member {pid}"), "text": text}
 
 
-def _binary_consensus(final_value: int | None, preferences: dict[int, int]) -> bool | None:
-    """The household's yes or no.
+def _binary_consensus(final_value: int | None) -> bool | None:
+    """The household's yes or no, read exactly as the published implementation reads it.
 
-    The consensus prompt asks for "the household's total ... (the sum across ALL members)", which
-    is the right instruction for a count and the wrong one for a yes or no: summing four members
-    and clamping the result into (0, 1) turns a single yes into a household that moves. So a
-    boolean domain only accepts a final value that is already 0 or 1, and otherwise falls back to
-    a majority vote over each member's last stated position, which is what the paper specifies for
-    a binary outcome. A tie is not a decision and is reported as one.
+    The published negotiation takes `FINAL_CONSENSUS` as it comes: no clamping into the value
+    range, no aggregation of its own. That matters here because the consensus prompt asks for
+    "the household's total ... (the sum across ALL members)", so clamping a summed count into
+    (0, 1) turns a single yes into a household that moves.
+
+    So 1 and 0 are the answer, and anything else is not one. A response that is neither is
+    reported as no answer rather than resolved by a rule the published code does not contain;
+    `evaluate` then skips the household instead of scoring it against a value we invented.
     """
     if final_value in (0, 1):
         return bool(final_value)
-    if not preferences:
-        return None
-    yes = sum(1 for v in preferences.values() if v)
-    no = len(preferences) - yes
-    if yes == no:
-        return None
-    return yes > no
+    return None
 
 
 def _task_dict(config: DomainConfig) -> dict[str, str]:
@@ -189,15 +180,12 @@ def negotiate(household: Household, config: DomainConfig,
     # member per round, so a repeat means the discussion has come back around.
     names = {m.person_id: (m.label or f"Member {m.person_id}") for m in household}
     turns: list[dict[str, Any]] = []
-    preferences: dict[int, int] = {}      # each member's last stated position
     round_no, seen = 1, set()
     for line in result["transcript"]:
         turn = _read_turn(line, names)
         if turn is None:
             continue
-        pid, own = turn.pop("person_id"), turn.pop("own_value")
-        if own is not None:
-            preferences[pid] = own
+        pid = turn.pop("person_id")
         if not turn["text"]:
             continue
         if pid in seen:
@@ -212,7 +200,7 @@ def negotiate(household: Household, config: DomainConfig,
 
     value = result["final_value"]
     if config.task.value_type is bool:
-        household.consensus_value = _binary_consensus(value, preferences)
+        household.consensus_value = _binary_consensus(value)
     elif value is not None:
         low, high = config.task.value_range
         household.consensus_value = config.task.value_type(max(low, min(high, value)))

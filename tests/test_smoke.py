@@ -268,30 +268,16 @@ def test_every_documented_import_resolves():
 
 # --- a yes or no is not a sum -------------------------------------------------------------------
 
-def test_a_single_yes_does_not_move_the_household():
-    """The consensus prompt asks for a sum across members, which is right for a count and wrong
-    for a yes or no: summing then clamping into (0, 1) turned one yes into a household that moves.
-    """
-    one_yes = {1: 1, 2: 0, 3: 0, 4: 0}
-    assert _binary_consensus(3, one_yes) is False       # a summed count, not a decision
-    assert _binary_consensus(2, one_yes) is False
-    assert _binary_consensus(None, one_yes) is False
-    # a value that is already a yes or no is taken at face value
-    assert _binary_consensus(1, one_yes) is True
-    assert _binary_consensus(0, one_yes) is False
+def test_a_summed_yes_or_no_is_not_a_decision():
+    """The consensus prompt asks for a sum across members. Clamping that into (0, 1) turned one
+    yes into a household that moves; the published implementation does not clamp at all."""
+    assert _binary_consensus(1) is True
+    assert _binary_consensus(0) is False
+    # anything that is not already a yes or no is no answer, not a resolved one
+    assert _binary_consensus(2) is None
+    assert _binary_consensus(3) is None
+    assert _binary_consensus(None) is None
 
-
-def test_binary_falls_back_to_a_majority_of_final_positions():
-    assert _binary_consensus(None, {1: 1, 2: 1, 3: 0}) is True
-    assert _binary_consensus(None, {1: 1, 2: 0, 3: 0}) is False
-    assert _binary_consensus(None, {1: 1, 2: 0}) is None          # a tie is not a decision
-    assert _binary_consensus(None, {}) is None
-
-
-def test_a_turn_carries_the_speakers_own_position():
-    turn = _read_turn("[Member 2] ACKNOWLEDGE: I would rather stay. MY_VALUE: 0 "
-                      "PREFERRED_TOTAL: 0", {2: "Spouse"})
-    assert turn["own_value"] == 0 and turn["speaker"] == "Spouse"
 
 
 # --- metrics and records ------------------------------------------------------------------------
