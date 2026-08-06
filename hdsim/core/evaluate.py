@@ -48,12 +48,67 @@ def _pairs(households: Sequence[Household]) -> tuple[list[float], list[float]]:
     return predicted, actual
 
 
+@dataclass
+class BinaryScores:
+    """Scores for a yes or no decision, such as whether a household moves."""
+
+    n: int
+    accuracy: float
+    precision: float
+    recall: float
+    f1: float
+
+    def __str__(self) -> str:
+        return (f"n={self.n}  accuracy={self.accuracy:.3f}  precision={self.precision:.3f}  "
+                f"recall={self.recall:.3f}  F1={self.f1:.3f}")
+
+
+def is_binary(households: Sequence[Household]) -> bool:
+    """True when the decision is a yes or no rather than a count."""
+    values = [h.ground_truth for h in households if h.ground_truth is not None]
+    values += [h.consensus_value for h in households if h.consensus_value is not None]
+    return bool(values) and all(isinstance(v, bool) for v in values)
+
+
+def score_binary(households: Sequence[Household]) -> BinaryScores:
+    """Score a yes or no decision.
+
+    Precision, recall and F1 all treat yes as the positive class, because the interesting error in
+    a relocation study is missing a household that moves, not one that stays.
+    """
+    pairs = [(h.consensus_value, h.ground_truth) for h in households
+             if h.consensus_value is not None and h.ground_truth is not None]
+    n = len(pairs)
+    if n == 0:
+        raise ValueError("No households have both a consensus value and a ground truth.")
+
+    tp = sum(1 for p, a in pairs if p and a)
+    fp = sum(1 for p, a in pairs if p and not a)
+    fn = sum(1 for p, a in pairs if not p and a)
+    tn = sum(1 for p, a in pairs if not p and not a)
+
+    precision = tp / (tp + fp) if tp + fp else 0.0
+    recall = tp / (tp + fn) if tp + fn else 0.0
+    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    return BinaryScores(n=n, accuracy=(tp + tn) / n, precision=precision, recall=recall, f1=f1)
+
+
 def score(households: Sequence[Household]) -> Scores:
     """Score simulated households against their recorded values.
 
     Households missing either a consensus or a ground truth are skipped, and `n` reports how many
     were actually used so a silently shrinking denominator is visible.
+
+    Counts only. A yes or no decision is refused rather than scored, because these metrics look
+    fine on one and mean nothing: `within_1` and `within_2` are 1.0 for every possible 0/1
+    prediction, including one that gets every household wrong.
     """
+    if is_binary(households):
+        raise TypeError(
+            "These households decided yes or no, not a count. MAE, sMAPE and the within-N "
+            "counts do not measure anything on a 0/1 outcome: within_1 and within_2 are 1.0 "
+            "however wrong the prediction is. Use score_binary() instead."
+        )
     predicted, actual = _pairs(households)
     n = len(predicted)
     if n == 0:
@@ -97,8 +152,12 @@ def paired_bootstrap(a: Sequence[Household], b: Sequence[Household],
     if not shared:
         raise ValueError("The two sets share no household ids, so they cannot be paired.")
 
+    scorer = score_binary if is_binary(list(a) + list(b)) else score
+    if metric == "mae" and scorer is score_binary:
+        metric = "f1"        # the default only makes sense for counts
+
     def value(households: list[Household]) -> float:
-        return getattr(score(households), metric)
+        return getattr(scorer(households), metric)
 
     observed = value([index_a[i] for i in shared]) - value([index_b[i] for i in shared])
 
