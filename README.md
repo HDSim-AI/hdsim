@@ -193,7 +193,7 @@ To run weights locally instead: `pip install -e '.[local]'`.
 A decision domain is data, not code. Supply a `DomainConfig` and the pipeline runs unchanged.
 
 ```python
-from hdsim import DecisionTask, DomainConfig
+from hdsim.core import DecisionTask, DomainConfig
 
 ENERGY = DomainConfig(
     name="energy",
