@@ -4,7 +4,15 @@ A recorded household negotiation, played back turn by turn with no model, no key
 download. This is what `hdsim demo` runs, so someone who has just installed the package can see
 what the method produces before deciding whether to configure a provider.
 
-The recordings are real runs, shipped as fixtures. Nothing here calls a network.
+The recordings are real stage-two outputs, selected and formatted for reading rather than
+generated for this package. They are multi-member households that reached consensus within two
+rounds, and each turn keeps the member's dialogue while dropping the per-turn structured fields
+(`MY_VALUE`, `PREFERRED_TOTAL`) that drive the ReST reward and are not meant to be read.
+
+A live run will not sound like these. The negotiation prompt was written for a model fine-tuned by
+that ReST loop, which learned to fill the acknowledgement slot with dialogue. A stock chat model
+tends to fill it with a bare cross-reference instead, so it converges on a sensible number while
+saying very little. Nothing here calls a network.
 """
 
 from __future__ import annotations
@@ -56,6 +64,20 @@ def get(household_id: str | None = None) -> dict[str, Any]:
     raise KeyError(f"No recording {household_id!r}. Available: {known}")
 
 
+def _say(value: Any, unit: str) -> str:
+    """A decided value as a reader sees it.
+
+    A yes or no domain stores True and False, and its unit describes the answer rather than
+    counting anything, so "True a yes or no" is not a sentence. Booleans print as yes or no on
+    their own; counts keep their unit.
+    """
+    if value is None:
+        return "no answer"
+    if isinstance(value, bool):
+        return "yes" if value else "no"
+    return f"{value} {unit}".strip()
+
+
 def render(record: dict[str, Any], show_personas: bool = False) -> str:
     """Format a recording for a terminal."""
     lines: list[str] = []
@@ -66,7 +88,7 @@ def render(record: dict[str, Any], show_personas: bool = False) -> str:
     lines.append("Opening positions, proposed independently")
     for member in record["members"]:
         role = member.get("role", f"Member {member['person_id']}")
-        lines.append(f"  {role:<22} {member['proposal_value']} {unit}")
+        lines.append(f"  {role:<22} {_say(member['proposal_value'], unit)}")
         if show_personas and member.get("capsule"):
             lines.append(f"      {member['capsule']}")
     lines.append("")
@@ -79,9 +101,11 @@ def render(record: dict[str, Any], show_personas: bool = False) -> str:
         lines.append(f"  {turn['speaker']}: {turn['text']}")
     lines.append("")
 
-    lines.append(f"Agreed: {record['consensus_value']} {unit}")
-    if record.get("ground_truth") is not None:
-        truth = record["ground_truth"]
-        error = abs(record["consensus_value"] - truth)
-        lines.append(f"Recorded in the survey: {truth} {unit}   (error {error})")
+    lines.append(f"Agreed: {_say(record['consensus_value'], unit)}")
+    truth = record.get("ground_truth")
+    if truth is not None and record.get("consensus_value") is not None:
+        line = f"Recorded in the survey: {_say(truth, unit)}"
+        if not isinstance(truth, bool):
+            line += f"   (error {abs(record['consensus_value'] - truth)})"
+        lines.append(line)
     return "\n".join(lines)
