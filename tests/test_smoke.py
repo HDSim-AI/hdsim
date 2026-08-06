@@ -1,6 +1,18 @@
 """Smoke tests. These must pass with no API key and no network."""
 
-from hdsim.core import DecisionTask, DomainConfig, Household, Member, parse_value, replay
+import pytest
+
+from hdsim.core import (
+    DecisionTask,
+    DomainConfig,
+    Household,
+    Member,
+    cli,
+    evaluate,
+    parse_value,
+    replay,
+)
+from hdsim.core.evaluate import paired_bootstrap
 from hdsim.core.negotiate import _read_turn
 
 
@@ -156,3 +168,77 @@ def test_a_yes_or_no_result_reads_as_yes_or_no():
     assert "Agreed: no" in out
     assert "a yes or no" not in out
     assert "Head                   yes" in out
+
+
+# --- serialisation: a saved run must come back the way it went in -----------------------------
+
+def test_household_survives_a_save_and_load():
+    """Every field that render() reads has to survive the round trip, not just most of them."""
+    h = Household(household_id="x", members=[Member(person_id=1, label="Head")],
+                  consensus_value=4, rounds=2, unit="trips",
+                  transcript=[{"round": 1, "speaker": "Head", "text": "hi"}])
+    back = Household.from_dict(h.to_dict())
+    for field in ("household_id", "consensus_value", "rounds", "unit", "transcript"):
+        assert getattr(back, field) == getattr(h, field), field
+    assert back.members[0].label == "Head"
+
+
+def test_a_recorded_run_replays():
+    h = Household(household_id="x", members=[Member(person_id=1, label="Head")],
+                  consensus_value=6, unit="trips",
+                  transcript=[{"round": 1, "speaker": "Head", "text": "Two each way."}])
+    h.members[0].proposal_value = 6
+    out = replay.render(h.to_record())
+    assert "Head" in out and "Agreed: 6 trips" in out and "Two each way." in out
+
+
+# --- metrics: a yes or no decision must not be scored as if it were a count -------------------
+
+def test_counts_are_scored_as_counts():
+    hs = [Household(household_id=str(i), consensus_value=v, ground_truth=v + 1)
+          for i, v in enumerate([2, 4, 6, 8])]
+    s = evaluate.score(hs)
+    assert s.n == 4 and s.mae == 1.0 and s.bias == -1.0
+
+
+def test_a_yes_or_no_set_is_refused_by_the_count_metrics():
+    """within_1 is 1.0 for every possible 0/1 prediction, so MAE-style scoring cannot be offered."""
+    hs = [Household(household_id=str(i), consensus_value=p, ground_truth=t)
+          for i, (p, t) in enumerate([(True, True), (False, False), (False, True), (True, False)])]
+    assert evaluate.is_binary(hs)
+    with pytest.raises(TypeError, match="score_binary"):
+        evaluate.score(hs)
+
+
+def test_a_yes_or_no_set_scores_as_a_classifier():
+    hs = [Household(household_id=str(i), consensus_value=p, ground_truth=t)
+          for i, (p, t) in enumerate([(True, True), (False, False), (False, True), (True, False)])]
+    s = evaluate.score_binary(hs)
+    assert (s.n, s.accuracy, s.precision, s.recall, s.f1) == (4, 0.5, 0.5, 0.5, 0.5)
+    perfect = [Household(household_id=str(i), consensus_value=t, ground_truth=t)
+               for i, t in enumerate([True, False, True, False])]
+    assert evaluate.score_binary(perfect).f1 == 1.0
+
+
+def test_bootstrap_picks_the_right_metric_for_the_domain():
+    yes = [Household(household_id=str(i), consensus_value=t, ground_truth=t)
+           for i, t in enumerate([True, False, True, False])]
+    assert paired_bootstrap(yes, yes, n_boot=50)["metric"] == "f1"
+    counts = [Household(household_id=str(i), consensus_value=v, ground_truth=v)
+              for i, v in enumerate([2, 4])]
+    assert paired_bootstrap(counts, counts, n_boot=50)["metric"] == "mae"
+
+
+# --- the CLI is a user-facing surface too -----------------------------------------------------
+
+def test_an_unknown_recording_is_reported_without_repr_quotes(capsys):
+    assert cli.main(["demo", "nope"]) == 1
+    err = capsys.readouterr().err
+    assert err.startswith("No recording"), err
+
+
+def test_asking_for_personas_says_so_when_there_are_none():
+    record = {"household_id": "x", "unit": "trips", "consensus_value": 4, "ground_truth": None,
+              "members": [{"person_id": "1", "role": "Head", "proposal_value": 4, "capsule": ""}],
+              "transcript": [{"round": 1, "speaker": "Head", "text": "hi"}]}
+    assert "does not carry personas" in replay.render(record, show_personas=True)
