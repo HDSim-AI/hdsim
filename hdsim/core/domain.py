@@ -12,6 +12,7 @@ dataset-specific code.
 
 from __future__ import annotations
 
+import inspect
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -28,12 +29,13 @@ class DecisionTask:
     target_description: str       # "the total number of one-way trips the household will make"
     unit: str                     # "trips"
 
-    # Three quantities, three labels. A member's own count, that member's view of the household
-    # total, and the agreed total are different numbers, and a discussion that cannot name them
-    # separately collapses them: asked for "one number", a model averages the members instead of
-    # summing them. Kept aligned with the negotiation implementation in the research pipeline.
-    member_label: str = "MY_VALUE"
-    total_label: str = "PREFERRED_TOTAL"
+    # A member's own count, that member's view of the household total, and the agreed total are
+    # three different numbers, and a discussion that cannot name them separately collapses them:
+    # asked for "one number", a model averages the members instead of summing them.
+    #
+    # Only the last of the three is configurable here. The other two are written into the published
+    # negotiation prompt and into the parser that reads it back, so they are fixed by the method
+    # rather than by the domain, and live in `stage2` as MEMBER_LABEL and TOTAL_LABEL.
     final_label: str = "FINAL_VALUE"
     value_type: type = int
     value_range: tuple[float, float] = (0, 30)
@@ -123,10 +125,19 @@ class DomainConfig:
                 text = None
         return text
 
-    def facts_for(self, record: dict[str, Any]) -> list[str]:
-        """Survey record to an ordered list of first-person facts."""
+    def facts_for(self, record: dict[str, Any], context: Any = None) -> list[str]:
+        """Survey record to an ordered list of first-person facts.
+
+        `context` carries household-level values a person row does not hold on its own, such as
+        tenure or income. A `facts_fn` that takes a second argument receives it; one that takes a
+        single argument still works, so neither shipped domain changes.
+        """
         if self.facts_fn is not None:
-            return self.facts_fn(record)
+            try:
+                takes_two = len(inspect.signature(self.facts_fn).parameters) >= 2
+            except (TypeError, ValueError):        # builtins and C callables
+                takes_two = False
+            return self.facts_fn(record, context) if takes_two else self.facts_fn(record)
         facts = []
         for col in self.fact_columns:
             if col not in record:

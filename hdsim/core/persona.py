@@ -14,6 +14,8 @@ takes a `DomainConfig`.
 
 from __future__ import annotations
 
+from typing import Any
+
 from . import stage1
 from .backends import Client, get_client
 from .domain import DomainConfig
@@ -89,14 +91,18 @@ def check_capsule(text: str, facts: list[str], config: DomainConfig) -> str | No
 
 
 def build_capsule(member: Member, config: DomainConfig,
-                  client: Client | None = None) -> Member:
-    """Fill in `member.facts` and `member.capsule`."""
+                  client: Client | None = None, context: Any = None) -> Member:
+    """Fill in `member.facts` and `member.capsule`.
+
+    `context` is anything household-level the domain's fact builder needs and a person row does
+    not carry, such as tenure or income. A loader that already wrote `member.facts` keeps them.
+    """
     client = client or get_client("persona")
     # A loader may have written richer facts already. Some surveys describe a person partly through
     # household-level fields that only make sense once the whole household is in hand, and the
     # loader is the only place that sees the group.
     if not member.facts:
-        member.facts = config.facts_for(member.record)
+        member.facts = config.facts_for(member.record, context)
     if not member.facts:
         raise PersonaError(f"member {member.person_id}: no facts could be rendered from the record")
 
@@ -185,7 +191,8 @@ def enrich(member: Member, config: DomainConfig, client: Client | None = None) -
 # --- household level --------------------------------------------------------------------------------
 
 def build_personas(household: Household, config: DomainConfig,
-                   client: Client | None = None, roster: bool = False) -> Household:
+                   client: Client | None = None, roster: bool = False,
+                   context: Any = None) -> Household:
     """Build every member's persona.
 
     `roster` is off by default, which reproduces the published pipeline: personas there are built
@@ -201,7 +208,7 @@ def build_personas(household: Household, config: DomainConfig,
     client = client or get_client("persona")
 
     for member in household:
-        build_capsule(member, config, client)
+        build_capsule(member, config, client, context)
 
     if roster and config.describe_member and config.relate_members:
         household.build_roster(config.describe_member, config.relate_members)
