@@ -1,0 +1,45 @@
+name: Star history
+
+on:
+  # Fires the moment someone stars the repository, so the chart redraws within about a
+  # minute of the star rather than waiting for a schedule. Confusingly named: "watch" is
+  # the webhook for starring, and "started" is its only activity type.
+  watch:
+    types: [started]
+  schedule:
+    # Backstop. Unstarring emits no event at all, and a missed webhook would otherwise
+    # leave the chart stale; a run with no change commits nothing.
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  chart:
+    name: regenerate chart
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # GITHUB_TOKEN is a collaborator on this repository, which is what the stargazers
+      # timestamp API has required since GitHub restricted it on 2026-06-30.
+      - name: Render the chart
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python tools/star_history.py "${{ github.repository }}" docs/assets/star-history.svg
+
+      - name: Commit if the chart changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/assets/star-history.svg
+          if git diff --staged --quiet; then
+            echo "no new stars, nothing to commit"
+            exit 0
+          fi
+          git commit -m "Update star history"
+          git push
