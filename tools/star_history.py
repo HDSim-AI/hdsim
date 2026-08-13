@@ -23,6 +23,17 @@ W, H = 800, 350
 PAD_L, PAD_R, PAD_T, PAD_B = 58, 34, 26, 62
 API = "https://api.github.com"
 
+# Kept out of the f-strings below: CSS braces would all need doubling, and the colours are
+# picked so the chart reads on GitHub's light and dark backgrounds alike.
+STYLE = (
+    "<style>"
+    ".bg{fill:#ffffff}.gr{stroke:#e6ebe8}.ax{fill:#5b6b78}.ttl{fill:#17212b}"
+    "@media (prefers-color-scheme:dark){"
+    ".bg{fill:#0d1117}.gr{stroke:#21262d}.ax{fill:#8b949e}.ttl{fill:#e6edf3}}"
+    "text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
+    "</style>"
+)
+
 
 def fetch_stars(repo, token):
     """Every stargazer's starred_at, oldest first. Needs collaborator access since 2026-06-30."""
@@ -77,22 +88,17 @@ def render(series, out_path):
 
     # brand green, then two tints that stay distinguishable in both themes
     colors = ["#2f7d5f", "#c2703d", "#4a6fa5"]
-    p = ['<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" '
-         'viewBox="0 0 %d %d" role="img" aria-label="Star history">' % (W, H, W, H),
-         "<style>"
-         ".bg{fill:#ffffff}.gr{stroke:#e6ebe8}.ax{fill:#5b6b78}.ttl{fill:#17212b}"
-         "@media (prefers-color-scheme:dark){"
-         ".bg{fill:#0d1117}.gr{stroke:#21262d}.ax{fill:#8b949e}.ttl{fill:#e6edf3}}"
-         "text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
-         "</style>",
-         '<rect class="bg" width="%d" height="%d"/>' % (W, H)]
+    p = [(f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
+          f'viewBox="0 0 {W} {H}" role="img" aria-label="Star history">'),
+         STYLE,
+         f'<rect class="bg" width="{W}" height="{H}"/>']
 
     for t in ticks:
         yy = y(t)
-        p.append('<line class="gr" x1="%d" y1="%.1f" x2="%d" y2="%.1f" stroke-width="1"/>'
-                 % (PAD_L, yy, W - PAD_R, yy))
-        p.append('<text class="ax" x="%d" y="%.1f" font-size="12" text-anchor="end">%d</text>'
-                 % (PAD_L - 10, yy + 4, t))
+        p.append(f'<line class="gr" x1="{PAD_L}" y1="{yy:.1f}" x2="{W - PAD_R}" '
+                 f'y2="{yy:.1f}" stroke-width="1"/>')
+        p.append(f'<text class="ax" x="{PAD_L - 10}" y="{yy + 4:.1f}" font-size="12" '
+                 f'text-anchor="end">{t}</text>')
 
     # Repos in one org tend to be starred by the same people on the same day, which puts the
     # step lines exactly on top of each other and hides every series but the last drawn. Nudge
@@ -110,26 +116,29 @@ def render(series, out_path):
             n += 1
             pts.append((x(dt), y(n) + dy))
         pts.append((x(t1), y(n) + dy))
-        d = "M" + " L".join("%.1f %.1f" % q for q in pts)
+        d = "M" + " L".join(f"{px:.1f} {py:.1f}" for px, py in pts)
         c = colors[i % len(colors)]
-        p.append('<path d="%s" fill="none" stroke="%s" stroke-width="2.5" '
-                 'stroke-linejoin="round"/>' % (d, c))
-        p.append('<circle cx="%.1f" cy="%.1f" r="3.5" fill="%s"/>' % (*pts[-1], c))
-        p.append('<rect x="%d" y="%d" width="10" height="10" rx="2" fill="%s"/>'
-                 % (PAD_L + i * 210, H - 16, c))
-        p.append('<text class="ax" x="%d" y="%d" font-size="12">%s</text>'
-                 % (PAD_L + i * 210 + 16, H - 7, label))
+        ex, ey = pts[-1]
+        legend_x = PAD_L + i * 210
+        p.append(f'<path d="{d}" fill="none" stroke="{c}" stroke-width="2.5" '
+                 f'stroke-linejoin="round"/>')
+        p.append(f'<circle cx="{ex:.1f}" cy="{ey:.1f}" r="3.5" fill="{c}"/>')
+        p.append(f'<rect x="{legend_x}" y="{H - 16}" width="10" height="10" rx="2" '
+                 f'fill="{c}"/>')
+        p.append(f'<text class="ax" x="{legend_x + 16}" y="{H - 7}" '
+                 f'font-size="12">{label}</text>')
 
     for lbl, anchor, xx in ((t0.strftime("%b %d, %Y"), "start", PAD_L),
                             (t1.strftime("%b %d, %Y"), "end", W - PAD_R)):
-        p.append('<text class="ax" x="%d" y="%d" font-size="11" text-anchor="%s">%s</text>'
-                 % (xx, H - PAD_B + 18, anchor, lbl))
-    p.append('<text class="ttl" x="%d" y="16" font-size="13" font-weight="600">Star history'
-             '</text>' % PAD_L)
+        p.append(f'<text class="ax" x="{xx}" y="{H - PAD_B + 18}" font-size="11" '
+                 f'text-anchor="{anchor}">{lbl}</text>')
+    p.append(f'<text class="ttl" x="{PAD_L}" y="16" font-size="13" '
+             f'font-weight="600">Star history</text>')
     # No "generated on" stamp: it would change the file on every scheduled run and produce a
-    # weekly commit even when nobody starred anything. The x axis already ends at the last star.
-    p.append('<text class="ax" x="%d" y="16" font-size="11" text-anchor="end">%d total</text>'
-             % (W - PAD_R, sum(len(t) for t in series.values())))
+    # commit even when nobody starred anything. The x axis already ends at the last star.
+    total = sum(len(t) for t in series.values())
+    p.append(f'<text class="ax" x="{W - PAD_R}" y="16" font-size="11" '
+             f'text-anchor="end">{total} total</text>')
     p.append("</svg>")
 
     out = pathlib.Path(out_path)
